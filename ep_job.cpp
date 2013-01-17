@@ -140,7 +140,7 @@ namespace ep{
 
 	}
 
-	job::job(thread_pool* tp, u32 priority)
+	job::job(thread_pool* tp, u32 priority, bool autodestory)
 
 		:m_id(0),
 
@@ -154,7 +154,13 @@ namespace ep{
 
 		m_priority(priority),
 
-		m_refs(1)
+		m_refs(1),
+
+		m_autodestory(autodestory),
+
+		m_obj(NULL),
+
+		m_obj_clear(NULL)
 
 	{
 		
@@ -238,6 +244,12 @@ namespace ep{
 		}
 
 		m_child_tasks.clear();
+
+		if(m_obj_clear){
+
+			m_obj_clear(this, m_obj);
+
+		}
 
 		m_status = STATUS_INIT;
 
@@ -349,6 +361,12 @@ namespace ep{
 		}
 
 		be::be_sem_give(&m_semp);
+
+		if(all_finish && m_autodestory){
+
+			recycle();
+
+		}
 		
 		return	0;
 
