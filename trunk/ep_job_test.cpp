@@ -221,4 +221,27 @@ namespace ep{
 		return 0;
 	}
 
+	s32 job_test_6(){
+
+		printf("\n****************job_test_6**************\n");
+
+		job* j = new job(&g_test_tp);
+
+		j->set_auto_destory(true);
+
+		for(int i = 0; i < 10; ++i){
+
+			j->add_child_task(new test_cjob);
+
+		}
+
+		j->set_combiner(new test_combainer_cancel);
+
+		j->run();
+
+		j->cancel();
+
+		return 0;
+	}
+
 };

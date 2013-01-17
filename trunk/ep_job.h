@@ -153,6 +153,8 @@ namespace	ep{
 
 	class	thread_pool;
 
+	typedef s32 (*OBJCLEAR)(job*, void* obj);
+
 	class	job{
 
 	public:
@@ -163,7 +165,9 @@ namespace	ep{
 
 		job(thread_pool* tp, 
 			
-			u32 priority = PORIORITY_NORMAL);
+			u32 priority = PORIORITY_NORMAL,
+			
+			bool autodestory = false);
 
 		~job();	
 
@@ -223,6 +227,30 @@ namespace	ep{
 
 		}
 
+		s32 set_auto_destory(bool autodestory){
+
+			m_autodestory = autodestory;
+
+			return true;
+
+		}
+
+		bool auto_destroy(){
+
+			return m_autodestory;
+
+		}
+
+		s32 set_obj(void* obj, OBJCLEAR cl){
+
+			m_obj = obj;
+
+			m_obj_clear = cl;
+
+			return 0;
+
+		}
+
 	private:
 
 		s32 clear();
@@ -259,6 +287,13 @@ namespace	ep{
 		u32 m_priority;
 
 		u32 m_refs;
+
+		//auto destory when finish
+		bool m_autodestory;
+
+		void* m_obj;
+
+		OBJCLEAR m_obj_clear;
 
 		be::MUTEX m_cs;
 

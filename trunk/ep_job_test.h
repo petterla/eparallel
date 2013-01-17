@@ -19,6 +19,8 @@ namespace ep{
 
 	s32 job_test_5();
 
+	s32 job_test_6();
+
 };
 
 #endif/*EP_JOB_TEST_H*/
