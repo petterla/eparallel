@@ -8,6 +8,7 @@ namespace zvm{
 		m_e_map[OUT_OF_MEM] = new inner_exception("OUT_OF_MEM");
 		m_e_map[DIV_ZERO] = new inner_exception("DIV_ZERO");
 		m_e_map[INVALID_SYNC] = new inner_exception("INVALID_SYNC");
+		m_e_map[INVALID_INDEX] = new inner_exception("INVALID_INDEX");
 		m_e_map[UNKNOW_EXCP] = new inner_exception("UNKNOW_EXCP");
 	}
 

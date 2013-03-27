@@ -168,10 +168,22 @@ namespace zvm{
 		IRET,
 		RET,
 
+		//create same type obj and push to eax
+		//another()
+		ANOTHOR,
+		//create obj and push to eax
+		//anew(classdef idx)
 		ANEW,
+		//when call init,the arguments 
+		//store at op_stack
 		AINIT,
-		AGET,
-		APUT,
+		//init super
+		AINITSUPER,
+		AGETFIELD,
+		//set member number
+		APUTFIELDI,
+		//set member obj
+		APUTFIELDO,
 		AFIELDS,
 
 		//goto and jump
@@ -251,9 +263,7 @@ namespace zvm{
 		//push_null()
 		PUSH_NULL,
 
-		//create obj and push to stack top
-		//new_o()
-		NEW_O,
+
 
 		//throw
 		ATHROW,
