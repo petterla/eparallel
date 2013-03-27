@@ -8,6 +8,7 @@
 #include "zvm_stack.h"
 #include "zvm_obj.h"
 #include "zvm_function.h"
+#include "zvm_class.h"
 
 namespace zvm{
 
@@ -34,6 +35,7 @@ namespace zvm{
 	inline s32 op_process(const operation* op, stack* s, s32 status = SUCCESS){
 		obj* ol = NULL;
 		function* f = NULL;
+		classdef* c = NULL;
 		bool catched = false;
 		assert(s);
 
@@ -388,14 +390,43 @@ namespace zvm{
 				s->set_pc((u32)(-1) - 1);
 				ol = (obj*)(s->eax());
 				s->eax() = (s64)&(s->get_ret_reg());
-				return	s->get_ret_reg().assign(ol, s);
+				return	s->get_ret_reg().assign(s, ol);
 
 			case IRET:
 				s->set_pc((u32)(-1) - 1);
 				return	SUCCESS;
+
 			case RET:
 				s->set_pc((u32)(-1) - 1);
 				return	SUCCESS;
+
+			case ANEW:
+				c = (classdef*)(s->cls());
+				assert(c);
+				c = c->get_class(op->m_op.m_anew.m_idx);
+				if(!c){
+					s->eax() = (s64)c->create_entry_obj(s);
+					return	SUCCESS;
+				}else{
+					s->set_exception(ACCESS_NULL);
+					return	ACCESS_NULL;
+				}
+
+			case ANOTHOR:
+				c = (classdef*)(s->cls());
+				assert(c);
+				s->eax() = (s64)c->create_entry_obj(s);
+				return	SUCCESS;
+
+			case AINIT:
+				ol = (obj*)(s->ths());
+				if(!ol->is_null()){
+					s->eax() = (s64)ol->init(s);
+					return	SUCCESS;
+				}else{
+					s->set_exception(ACCESS_NULL);
+					return	ACCESS_NULL;
+				}
 
 			default:
 				break;

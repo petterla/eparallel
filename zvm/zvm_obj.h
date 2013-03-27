@@ -9,6 +9,7 @@
 namespace zvm{
 
 	class stack;
+	class obj;
 
 	class entry{
 	public:
@@ -20,13 +21,45 @@ namespace zvm{
 			return	"";
 		}
 
+		virtual s32 init(stack* s){
+			return	SUCCESS;
+		}
+
+		virtual s32 init_super(stack* s){
+			return	SUCCESS;
+		}
+
 		virtual	entry* clone(stack* s){
 			return	this;
+		}
+
+		virtual s64 get_member_i(stack* s, u32 idx){
+			return	0;
+		}
+
+		virtual obj* get_member_o(stack* s, u32 idx){
+			return	NULL;
+		}
+
+		virtual s32 set_member_i(stack* s, u32 idx, s64 i){
+			return	SUCCESS;
+		}
+
+		virtual s32 set_member_o(stack* s, u32 idx, obj* o){
+			return	SUCCESS;
 		}
 
 		virtual	s32 recycle(stack* s){
 			delete this;
 			return	SUCCESS;
+		}
+
+		virtual u32 get_member_count(){
+			return	0;
+		}
+
+		virtual obj* create_entry_obj(stack* s){
+			return	NULL;
 		}
 	};
 
@@ -38,18 +71,18 @@ namespace zvm{
 		}
 
 		~obj(){
-			set_entry(NULL, (stack*)1);
+			set_entry((stack*)1, NULL);
 		}
 
 		s32 clear(stack* s){
-			return	set_entry(NULL, s);
+			return	set_entry(s, NULL);
 		}
 
 		s32	lock(stack* s){
 			return	m_lock.lock((s32)s);
 		}
 
-		s32 set_entry(entry* ent, stack* s){
+		s32 set_entry(stack* s, entry* ent){
 
 			entry* e = (entry*)m_ent;
 			lock(s);
@@ -73,9 +106,9 @@ namespace zvm{
 			return	NULL;
 		}
 
-		s32 assign(obj* o, stack* s){
+		s32 assign(stack* s, obj* o){
 			entry* e = o->clone_entry(s);
-			return	o->set_entry(e, s);
+			return	o->set_entry(s, e);
 		}
 
 		s32 unlock(stack* s){
@@ -94,6 +127,57 @@ namespace zvm{
 			}
 			unlock(s);
 			return	t;
+		}
+
+
+		s32 init(stack* s){
+			if(m_ent){
+				return	m_ent->init(s);
+			}
+			return	SUCCESS;
+		}
+
+		obj* create_entry_obj(stack* s){
+			lock(s);
+			auto_simple_unlock ul(m_lock, (s32)s);
+			assert(m_ent);
+			return	m_ent->create_entry_obj(s);
+		}
+
+		s64 get_member_i(stack* s, u32 idx){
+			lock(s);
+			auto_simple_unlock ul(m_lock, (s32)s);
+			assert(m_ent);
+
+			return	m_ent->get_member_i(s, idx);
+		}
+
+		obj* get_member_o(stack* s, u32 idx){
+			lock(s);
+			auto_simple_unlock ul(m_lock, (s32)s);
+			assert(m_ent);
+			return	m_ent->get_member_o(s, idx);
+		}
+
+		s32 set_member_i(stack* s, u32 idx, s64 i){
+			lock(s);
+			auto_simple_unlock ul(m_lock, (s32)s);
+			assert(m_ent);
+			return	m_ent->set_member_i(s, idx, i);
+		}
+
+		s32 set_member_o(stack* s, u32 idx, obj* o){
+			lock(s);
+			auto_simple_unlock ul(m_lock, (s32)s);
+			assert(m_ent);
+			return	m_ent->set_member_o(s, idx, o);
+		}
+
+		u32 get_member_count(stack* s){
+			lock(s);
+			auto_simple_unlock ul(m_lock, (s32)s);
+			assert(m_ent);
+			return	m_ent->get_member_count();
 		}
 
 	private:

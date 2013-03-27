@@ -147,6 +147,12 @@ namespace zvm{
 	struct fret{};
 	struct ret{};
 
+	struct anew{
+		u32 m_idx;
+	};
+	struct ainit{};
+	//struct 
+
 	struct operation{
 		u32 m_op_code;
 		union{
@@ -224,6 +230,9 @@ namespace zvm{
 			struct opstackb m_opstackb;
 			struct opstackc m_opstackc;
 			struct opstackd m_opstackd;
+			struct anew  m_anew;
+			struct ainit m_ainit;
+			//struct 
 		} m_op;
 
 	};

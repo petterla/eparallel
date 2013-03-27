@@ -13,6 +13,8 @@ namespace	zvm{
 		INVALID_SYNC = -10003,
 		LOCK_NULL_OBJ = -10004,
 		OUT_OF_MEM = -10005,
+		INVALID_INDEX = -10007,
+		ACCESS_NULL = -10008,
 	};
 
 }

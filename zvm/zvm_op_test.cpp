@@ -2,6 +2,7 @@
 #include "zvm_op_code.h"
 #include "zvm_op_proc.h"
 #include "zvm_function.h"
+#include "zvm_class.h"
 #include <iostream>
 #include <time.h>
 
@@ -15,6 +16,7 @@ namespace zvm{
 		zvm_push_pop_test(s);
 		zvm_int_op_test(s);
 		zvm_function_test(s);
+		zvm_class_test(s);
 
 		return	0;
 
@@ -236,6 +238,22 @@ namespace zvm{
 		zvm_function_test1(s);
 
 		return	0;
+	}
+
+	int zvm_class_test(stack& s){
+		classdef c("test_class");
+
+		c.add_member(LOCAL_TYPE_INT);
+		c.add_member(LOCAL_TYPE_FLOAT);
+
+		obj* o = c.create_ent_obj(&s);
+
+		assert(o->get_member_count(&s) == 2);
+
+		s.deallocate(o);
+
+		return	0;
+
 	}
 
 }

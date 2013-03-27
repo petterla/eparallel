@@ -77,13 +77,25 @@ namespace zvm{
 		}
 
 		obj* allocate(entry* ent){
-			return	m_obj_pool.allocate();
+			obj* o = m_obj_pool.allocate();
+			if(o){
+				o->set_entry(NULL, ent);
+			}
+			return	o;
 		}
 
 		s32 deallocate(obj* o){
 			o->clear(this);
 			m_obj_pool.deallocate(o);
 			return	SUCCESS;
+		}
+
+		void* alloc_mem(u32 sz){
+			return ::new char[sz];
+		}
+
+		void free_mem(void* p,u32 sz){
+			::delete [] p;
 		}
 
 		s32 set_exception(s64 e){
@@ -134,6 +146,16 @@ namespace zvm{
 		s64& edx(){
 			return	m_edx;
 		}
+
+		//reg for this pointer
+		s64& ths(){
+			return m_ths;
+		}
+
+		//reg for class def
+		s64& cls(){
+			return	m_class;
+		}
 		
 		excep_manager& get_excep_manager(){
 			return	m_e_man;
@@ -149,6 +171,8 @@ namespace zvm{
 		s64 m_edx;
 
 		s64	m_excp;
+		s64 m_ths;
+		s64 m_class;
 
 		obj m_ret_obj;
 

@@ -15,6 +15,8 @@ namespace zvm{
 
 	int zvm_function_test(stack& s);
 
+	int zvm_class_test(stack& s);
+
 }
 
 #endif
