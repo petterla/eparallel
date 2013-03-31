@@ -26,7 +26,9 @@ s64		atomic_exchange64			(volatile	s64*	dst,
 											 s64	val);
 s64		atomic_add64				(volatile	s64		*	dst,	
 											 s64	val);
+//The function returns the resulting incremented value.
 s64		atomic_increament64			(volatile	s64		*	dst);
+//The function returns the resulting decremented value.
 s64		atomic_decreament64			(volatile	s64		*	dst);
 s32		atomic_compare_exchange32	(volatile	s32*	dst,	s32	val,	
 											 s32	cmp);
@@ -34,7 +36,9 @@ bool	atomic_compare_exchange32_1	(volatile	s32*	dst,	s32	val,
 											 s32	cmp);
 s32		atomic_exchange32			(volatile	s32*	dst,	s32	val);
 s32		atomic_add32				(volatile	s32*	dst,	s32	val);
+//The function returns the resulting incremented value.
 s32		atomic_increament32			(volatile	s32*	dst);
+//The function returns the resulting decremented value.
 s32		atomic_decreament32			(volatile	s32*	dst);
 
 void*	atomic_compare_exchange_ptr	(volatile	void**	dst,

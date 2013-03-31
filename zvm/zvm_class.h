@@ -9,6 +9,19 @@ namespace zvm{
 	class function;
 	class stack;
 
+	struct member_function{
+		function* m_fun;
+		bool m_devide;
+	};
+
+	struct member{
+		s32	m_type;
+		union{
+			u32 m_clss_idx;
+			s64 m_default;
+		} m_val;
+	};
+
 	/*****************************
 	[0 - n]parent member function
 	[n+1 - last]member function
@@ -50,31 +63,30 @@ namespace zvm{
 		u32 member_count(){
 			return	m_members_define.size();
 		}
-		s32 add_member(u32 type);
+		s32 add_member(const member& m);
 		std::string& name();
 		entry* create_ent(stack* s);
 		obj* create_ent_obj(stack* s);
 		classdef* get_parent(){
 			return	m_parent;
 		}
-		const std::vector<s32>& member_define() const{
-			return	m_members_define;
-		}
-		s32 member_type(u32 idx)const{
+		member member_define(u32 idx)const{
 			assert(idx < m_members_define.size());
 			return	m_members_define[idx];
 		}
+		u32 member_type(u32 idx)const{
+			assert(idx < m_members_define.size());
+			return	m_members_define[idx].m_type;
+		}
 	private:
 		s32 devide_from(classdef* p);
-		struct member_function{
-			function* m_fun;
-			bool m_devide;
-		};
 
+
+		friend class user_type;
 		std::string m_name;
 		classdef* m_parent;
 		function* m_init_function;
-		std::vector<s32> m_members_define;
+		std::vector<member> m_members_define;
 		std::vector<classdef*> m_classes;
 		std::vector<member_function> m_member_functions;
 		std::vector<local_t> m_static_fields;
@@ -86,13 +98,20 @@ namespace zvm{
 	*****************************/
 	class user_type:public entry{
 	public:
+		enum{
+			FLAG_NULL = 0,
+			FLAG_CLONE = 1,
+			FLAG_CHECK = 2,
+		};
 		user_type(classdef* c,
 			u32 member_cnt, 
 			s64* members);
 		~user_type();
 		virtual s32 init(stack* s);
+		virtual entry* clone(stack* s);
+		virtual bool check(stack* s);
 		virtual s32 init_super(stack* s);
-		virtual s32 recycle(stack* s);
+		virtual s32 clear(stack* s);
 		virtual u32 get_member_count();
 		virtual s64 get_member_i(stack* s, u32 idx);
 		virtual obj* get_member_o(stack* s, u32 idx);
@@ -104,7 +123,7 @@ namespace zvm{
 		obj* m_parent;
 		u32 m_member_count;
 		s64* m_members;
-
+		s32  m_flag;
 	};
 
 }

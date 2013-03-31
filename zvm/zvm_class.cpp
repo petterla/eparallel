@@ -72,8 +72,8 @@ namespace zvm{
 		return	SUCCESS;
 	}
 
-	s32 classdef::add_member(u32 type){
-		m_members_define.push_back(type);
+	s32 classdef::add_member(const member& m){
+		m_members_define.push_back(m);
 		return	SUCCESS;
 	}
 
@@ -137,6 +137,8 @@ namespace zvm{
 		return	o;	
 	}
 
+	//only allocate mem,allcate parent,
+	//create null member obj
 	entry* classdef::create_ent(stack* s){
 		user_type* t = (user_type*)
 			s->alloc_mem(sizeof(user_type) 
@@ -145,7 +147,6 @@ namespace zvm{
 			s->set_exception(OUT_OF_MEM);
 			return	NULL;
 		}
-
 		t->user_type::user_type(this, 
 			m_members_define.size(), 
 			(s64*)((s8*)t+sizeof(user_type)));
@@ -158,7 +159,17 @@ namespace zvm{
 				return	NULL;
 			}
 		}
+		for(size_t i = 0; i < m_members_define.size(); ++i){
+			if(m_members_define[i].m_type != LOCAL_TYPE_OBJ){
+				t->m_members[i] = m_members_define[i].m_val.m_default;
+				continue;
+			}
+			t->m_members[i] = (s64)(s->allocate(NULL));
+			if(!t->m_members[i])
+				return	NULL;
+		}
 		ac.set_entry(NULL);
+
 		return	t;
 	}
 
@@ -168,10 +179,12 @@ namespace zvm{
 		:m_class(c),
 		m_parent(NULL),
 		m_member_count(member_cnt),
-		m_members(members)
+		m_members(members),
+		m_flag(FLAG_NULL)
 	{
 		memset(members, 0, member_cnt * sizeof(s64));
 	}
+
 
 	s32 user_type::init(stack* s){
 		s32 ret = SUCCESS;
@@ -200,7 +213,86 @@ namespace zvm{
 
 	}
 
-	s32	user_type::recycle(stack* s){
+	entry* user_type::clone(stack* s){
+		//avoid loop clone
+		if(m_flag != FLAG_NULL){
+			m_flag = FLAG_NULL;
+			return	this;
+		}
+
+		m_flag = FLAG_CLONE;
+		//do clone,
+		user_type* t = (user_type*)
+			s->alloc_mem(sizeof(user_type) 
+			+ m_member_count * sizeof(s64));
+		if(!t){
+			s->set_exception(OUT_OF_MEM);
+			return	NULL;
+		}
+		t->user_type::user_type(m_class, 
+			m_member_count, 
+			(s64*)((s8*)t+sizeof(user_type)));
+
+		auto_recycle ac(t, s);
+
+		if(m_parent){
+			entry* e = m_parent->entry_clone(s);
+			if(!e){
+				return	NULL;
+			}
+			t->m_parent = s->allocate(e);
+			if(!t->m_parent){
+				return	NULL;
+			}
+		}
+		for(size_t i = 0; i < m_member_count; ++i){
+			if(m_class->m_members_define[i].m_type 
+				!= LOCAL_TYPE_OBJ){
+				t->m_members[i] = m_members[i];
+				continue;
+			}
+			entry* ent = ((obj*)m_members[i])->entry_clone(s);
+			if(!ent){
+				return	NULL;
+			}
+			t->m_members[i] = (s64)s->allocate(ent);
+			if(!t->m_members[i])
+				return	NULL;
+		}
+		ac.set_entry(NULL);
+		m_flag = FLAG_NULL;
+		return	t;
+
+	}
+
+	bool user_type::check(stack* s){
+		bool ret = true;
+		if(m_flag != FLAG_NULL){
+			return	recycle(s);
+		}
+		m_flag = FLAG_CHECK;
+
+		if(m_parent){
+			m_parent->check(s);
+		}
+		for(size_t i = 0; i < m_member_count; ++i){
+			if(m_class->m_members_define[i].m_type
+				== LOCAL_TYPE_OBJ||
+				!((obj*)m_members[i])->check(s)){
+			}
+		}
+
+		m_flag = FLAG_NULL;
+		return	ret;
+	}
+
+	s32	user_type::clear(stack* s){
+		//loop reference
+		if(m_flag != FLAG_NULL){
+			m_flag = FLAG_NULL;
+			return	SUCCESS;
+		}
+		m_flag = FLAG_CHECK;
 		obj* o = NULL;
 		for(u32 i = m_member_count; i > 0; --i){
 			if(m_class->member_type(i - 1)
@@ -213,10 +305,11 @@ namespace zvm{
 		if(m_parent){
 			s->deallocate(m_parent);
 		}
-
+		//(1) must before (2),we can not use any member 
+		//of a obj afer the memory is free
+		m_flag = FLAG_NULL;//(1)
 		s->free_mem(this, sizeof(user_type) 
-			+ m_member_count * sizeof(s64));
-
+			+ m_member_count * sizeof(s64));//(2)
 		return	SUCCESS;
 	}
 

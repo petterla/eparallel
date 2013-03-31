@@ -4,6 +4,7 @@
 #include "zvm_type.h"
 #include "zvm_err_no.h"
 #include "zvm_lock.h"
+#include "be_atomic.h"
 #include <string>
 
 namespace zvm{
@@ -13,6 +14,12 @@ namespace zvm{
 
 	class entry{
 	public:
+
+		entry()
+			:m_ref_cnt(0){
+
+		}
+
 		virtual	~entry(){
 
 		}
@@ -29,10 +36,14 @@ namespace zvm{
 			return	SUCCESS;
 		}
 
-		virtual	entry* clone(stack* s){
+		virtual	entry* reference(stack* s){
+			be::atomic_increament32(&m_ref_cnt);
 			return	this;
 		}
 
+		virtual entry* clone(stack* s){
+			return	NULL;
+		}
 		virtual s64 get_member_i(stack* s, u32 idx){
 			return	0;
 		}
@@ -50,6 +61,14 @@ namespace zvm{
 		}
 
 		virtual	s32 recycle(stack* s){
+			be::s32 c = be::atomic_decreament32(&m_ref_cnt);
+			if(c < 0){
+				return	clear(s);
+			}
+			return	SUCCESS;
+		}
+
+		virtual s32 clear(stack* s){
 			delete this;
 			return	SUCCESS;
 		}
@@ -57,10 +76,17 @@ namespace zvm{
 		virtual u32 get_member_count(){
 			return	0;
 		}
+		//check if loop reference
+		//if not return true;
+		virtual bool check(stack* s){
+			return	true;
+		}
 
 		virtual obj* create_entry_obj(stack* s){
 			return	NULL;
 		}
+	public:
+		volatile be::s32 m_ref_cnt;
 	};
 
 	class obj{
@@ -95,8 +121,18 @@ namespace zvm{
 			return	SUCCESS;
 		}
 
-		entry* clone_entry(stack* s){
+		entry* entry_reference(stack* s){
 
+			lock(s);
+			auto_simple_unlock ul(m_lock, (s32)s);
+
+			if(m_ent){
+				return	m_ent->reference(s);
+			}
+			return	NULL;
+		}
+
+		entry* entry_clone(stack* s){
 			lock(s);
 			auto_simple_unlock ul(m_lock, (s32)s);
 
@@ -107,8 +143,11 @@ namespace zvm{
 		}
 
 		s32 assign(stack* s, obj* o){
-			entry* e = o->clone_entry(s);
-			return	o->set_entry(s, e);
+			entry* e = o->entry_reference(s);
+			if(!e){
+				return	OUT_OF_MEM;
+			}
+			return	set_entry(s, e);
 		}
 
 		s32 unlock(stack* s){
@@ -129,6 +168,11 @@ namespace zvm{
 			return	t;
 		}
 
+		bool check(stack* s){
+			if(m_ent)
+				return	m_ent->check(s);
+			return	true;
+		}
 
 		s32 init(stack* s){
 			if(m_ent){

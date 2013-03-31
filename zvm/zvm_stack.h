@@ -18,7 +18,7 @@ namespace zvm{
 	class stack{
 	public:
 		enum{
-			STACK_DEFAULT_SIZE = 512 * 1024,
+			STACK_DEFAULT_SIZE = 16 * 1024,
 		};
 
 		stack()
@@ -79,23 +79,30 @@ namespace zvm{
 		obj* allocate(entry* ent){
 			obj* o = m_obj_pool.allocate();
 			if(o){
-				o->set_entry(NULL, ent);
+				o->set_entry(this, ent);
 			}
+			//printf("allocate:%p\n", o);
 			return	o;
 		}
 
 		s32 deallocate(obj* o){
-			o->clear(this);
-			m_obj_pool.deallocate(o);
+			if(o){
+				o->clear(this);
+				m_obj_pool.deallocate(o);
+			}
+			//printf("deallocate:%p\n", o);
 			return	SUCCESS;
 		}
 
 		void* alloc_mem(u32 sz){
-			return ::new char[sz];
+			char* p = new char[sz];
+			//printf("alloc_mem:%p\n", p);
+			return	p;
 		}
 
 		void free_mem(void* p,u32 sz){
-			::delete [] p;
+			//printf("free_mem:%p\n", p);
+			delete [] (char*)(p);
 		}
 
 		s32 set_exception(s64 e){
