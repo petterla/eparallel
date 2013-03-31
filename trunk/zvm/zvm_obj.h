@@ -224,6 +224,10 @@ namespace zvm{
 			return	m_ent->get_member_count();
 		}
 
+		entry* get_entry(){
+			return	m_ent;
+		}
+
 	private:
 		simple_lock m_lock;
 		entry* m_ent;

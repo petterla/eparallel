@@ -261,6 +261,19 @@ namespace zvm{
 		return	0;
 	}
 
+	static int zvm_loop_refence_test(stack& s,
+		classdef& c){
+		obj* o = c.create_ent_obj(&s);	
+		entry* e = o->get_entry();
+		o->set_member_o(&s, 2, o);
+		assert(o->get_member_count(&s) == c.member_count());
+		//s.deallocate(o);
+		o->check(&s);
+		s.deallocate(o);
+		return	0;
+
+	}
+
 	int zvm_class_test(stack& s){
 
 		classdef c("test_class");
@@ -283,6 +296,7 @@ namespace zvm{
 
 		zvm_class_new_test(s, c);
 		zvm_class_assign_test(s, c);
+		zvm_loop_refence_test(s, c);
 
 		return	0;
 

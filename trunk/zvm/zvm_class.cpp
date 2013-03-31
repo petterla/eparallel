@@ -277,8 +277,8 @@ namespace zvm{
 		}
 		for(size_t i = 0; i < m_member_count; ++i){
 			if(m_class->m_members_define[i].m_type
-				== LOCAL_TYPE_OBJ||
-				!((obj*)m_members[i])->check(s)){
+				== LOCAL_TYPE_OBJ){
+				((obj*)m_members[i])->check(s);
 			}
 		}
 
