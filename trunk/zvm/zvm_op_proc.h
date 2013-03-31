@@ -17,7 +17,7 @@ namespace zvm{
 		assert(s);
 		obj* o = (obj*)s->eax();
 		assert(o);
-		obj* no = s->allocate(o->clone_entry(s));
+		obj* no = s->allocate(o->entry_reference(s));
 		return	no;
 
 	}
@@ -27,7 +27,7 @@ namespace zvm{
 		assert(s);
 		obj* o = (obj*)s->get_op_stack().pop();
 		assert(o);
-		obj* no = s->allocate(o->clone_entry(s));
+		obj* no = s->allocate(o->entry_reference(s));
 		return	no;
 
 	}

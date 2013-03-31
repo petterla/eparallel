@@ -13,9 +13,9 @@ namespace zvm{
 		stack	s;
 		s.push_frame();
 		
-		zvm_push_pop_test(s);
-		zvm_int_op_test(s);
-		zvm_function_test(s);
+		//zvm_push_pop_test(s);
+		//zvm_int_op_test(s);
+		//zvm_function_test(s);
 		zvm_class_test(s);
 
 		return	0;
@@ -240,17 +240,49 @@ namespace zvm{
 		return	0;
 	}
 
-	int zvm_class_test(stack& s){
-		classdef c("test_class");
-
-		c.add_member(LOCAL_TYPE_INT);
-		c.add_member(LOCAL_TYPE_FLOAT);
+	static int zvm_class_new_test(stack& s, 
+		classdef& c){
 
 		obj* o = c.create_ent_obj(&s);
-
-		assert(o->get_member_count(&s) == 2);
-
+		assert(o->get_member_count(&s) == c.member_count());
 		s.deallocate(o);
+
+		return	0;
+	}
+
+	static int zvm_class_assign_test(stack& s, 
+		classdef& c){
+		obj* o = c.create_ent_obj(&s);	
+		obj* o1 = s.allocate(NULL);
+		o1->assign(&s, o);
+		assert(o->get_member_count(&s) == c.member_count());
+		s.deallocate(o);
+		s.deallocate(o1);
+		return	0;
+	}
+
+	int zvm_class_test(stack& s){
+
+		classdef c("test_class");
+
+		member m0;
+		m0.m_type = LOCAL_TYPE_INT;
+		m0.m_val.m_default = 12345;
+
+		member m1;
+		m1.m_type = LOCAL_TYPE_FLOAT;
+		float f = 987654.321;
+		m1.m_val.m_default = *(s64*)&f;
+
+		member m2;
+		m2.m_type = LOCAL_TYPE_OBJ;
+
+		c.add_member(m0);
+		c.add_member(m1);
+		c.add_member(m2);
+
+		zvm_class_new_test(s, c);
+		zvm_class_assign_test(s, c);
 
 		return	0;
 
