@@ -2,6 +2,7 @@
 #define ZVM_CLASS_H
 
 #include "zvm_obj.h"
+#include "zvm_gc.h"
 #include <string>
 #include <vector>
 
@@ -96,20 +97,18 @@ namespace zvm{
 	/*****************************
 
 	*****************************/
-	class user_type:public entry{
+	class user_type:public type_gc{
 	public:
-		enum{
-			FLAG_NULL = 0,
-			FLAG_CLONE = 1,
-			FLAG_CHECK = 2,
-		};
+
 		user_type(classdef* c,
 			u32 member_cnt, 
 			s64* members);
 		~user_type();
 		virtual s32 init(stack* s);
 		virtual entry* clone(stack* s);
-		virtual bool check(stack* s);
+		virtual bool sign(stack* s, bool first);
+		virtual bool check_live(stack* s);
+		virtual bool reset(stack* s);
 		virtual s32 init_super(stack* s);
 		virtual s32 clear(stack* s);
 		virtual u32 get_member_count();

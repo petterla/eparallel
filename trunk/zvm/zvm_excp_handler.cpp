@@ -11,6 +11,7 @@ namespace zvm{
 			&& s->pc() >= m_start_pc
 			&& s->pc() < m_end_pc){
 				if(!m_throw_again){
+					e->set_entry(s, NULL);
 					s->deallocate(e);
 				}
 				s->pc() = m_ent_addr;

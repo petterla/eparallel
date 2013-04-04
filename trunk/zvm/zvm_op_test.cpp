@@ -242,34 +242,75 @@ namespace zvm{
 
 	static int zvm_class_new_test(stack& s, 
 		classdef& c){
-
+#ifdef ZVM_ENTRY_DEBUG
+			s32 cnt = entry::s_ent_cnt;
+#endif
 		obj* o = c.create_ent_obj(&s);
+		user_type* e = (user_type*)o->get_entry();
 		assert(o->get_member_count(&s) == c.member_count());
 		s.deallocate(o);
-
+#ifdef ZVM_ENTRY_DEBUG
+		assert(cnt < entry::s_ent_cnt);
+#endif
+		((user_type*)e)->try_collect(&s);
+#ifdef ZVM_ENTRY_DEBUG
+		assert(cnt == entry::s_ent_cnt);
+#endif
 		return	0;
 	}
 
 	static int zvm_class_assign_test(stack& s, 
 		classdef& c){
+#ifdef ZVM_ENTRY_DEBUG
+			s32 cnt = entry::s_ent_cnt;
+#endif
 		obj* o = c.create_ent_obj(&s);	
-		obj* o1 = s.allocate(NULL);
+		obj* o1 = c.create_ent_obj(&s);
+		user_type* e = (user_type*)o->get_entry();
+		user_type* e1 = (user_type*)o1->get_entry();
 		o1->assign(&s, o);
-		assert(o->get_member_count(&s) == c.member_count());
+		assert(o1->get_member_count(&s) == c.member_count());
 		s.deallocate(o);
 		s.deallocate(o1);
+#ifdef ZVM_ENTRY_DEBUG
+		assert(cnt < entry::s_ent_cnt);
+#endif
+		((user_type*)e)->try_collect(&s);
+		((user_type*)e1)->try_collect(&s);
+#ifdef ZVM_ENTRY_DEBUG
+		assert(cnt == entry::s_ent_cnt);
+#endif
+
 		return	0;
 	}
 
 	static int zvm_loop_refence_test(stack& s,
 		classdef& c){
+#ifdef ZVM_ENTRY_DEBUG
+		s32 cnt = entry::s_ent_cnt;
+#endif
 		obj* o = c.create_ent_obj(&s);	
 		entry* e = o->get_entry();
 		o->set_member_o(&s, 2, o);
 		assert(o->get_member_count(&s) == c.member_count());
 		//s.deallocate(o);
-		o->check(&s);
+		bool ret = o->sign(&s, true);
+		assert(!ret);
+		ret = o->check_live(&s);
+		assert(ret);
 		s.deallocate(o);
+		ret = e->sign(&s, true);
+		assert(!ret);
+		ret = e->check_live(&s);
+		assert(!ret);
+		e->recycle(&s);
+#ifdef ZVM_ENTRY_DEBUG
+		assert(cnt < entry::s_ent_cnt);
+#endif
+		((user_type*)e)->try_collect(&s);
+#ifdef ZVM_ENTRY_DEBUG
+		assert(cnt == entry::s_ent_cnt);
+#endif
 		return	0;
 
 	}

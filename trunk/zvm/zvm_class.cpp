@@ -4,7 +4,9 @@
 #include "be_atomic.h"
 
 namespace zvm{
-
+#ifdef ZVM_ENTRY_DEBUG
+	int entry::s_ent_cnt = 0;
+#endif
 	classdef::~classdef(){
 		free();
 	}
@@ -215,12 +217,12 @@ namespace zvm{
 
 	entry* user_type::clone(stack* s){
 		//avoid loop clone
-		if(m_flag != FLAG_NULL){
-			m_flag = FLAG_NULL;
+		if(m_status != STATUS_NULL){
+			m_status = STATUS_NULL;
 			return	this;
 		}
 
-		m_flag = FLAG_CLONE;
+		m_status = STATUS_CLONE;
 		//do clone,
 		user_type* t = (user_type*)
 			s->alloc_mem(sizeof(user_type) 
@@ -260,41 +262,122 @@ namespace zvm{
 				return	NULL;
 		}
 		ac.set_entry(NULL);
-		m_flag = FLAG_NULL;
+		m_status = STATUS_NULL;
 		return	t;
 
 	}
 
-	bool user_type::check(stack* s){
+	bool user_type::sign(stack* s, bool first){
 		bool ret = true;
-		if(m_flag != FLAG_NULL){
-			return	recycle(s);
+		if(!first)
+			++m_loop_cnt;
+		if(m_status != STATUS_NULL){
+			m_flag = FLAG_LOOP;
+			return	false;
 		}
-		m_flag = FLAG_CHECK;
-
+		m_status = STATUS_SIGN;
 		if(m_parent){
-			m_parent->check(s);
+			m_parent->sign(s, false);
 		}
 		for(size_t i = 0; i < m_member_count; ++i){
 			if(m_class->m_members_define[i].m_type
 				== LOCAL_TYPE_OBJ){
-				((obj*)m_members[i])->check(s);
+					((obj*)m_members[i])->sign(s, false);
 			}
 		}
-
-		m_flag = FLAG_NULL;
+		if(m_flag == FLAG_LOOP)
+			ret = false;
+		m_status = STATUS_NULL;
 		return	ret;
 	}
 
+	bool user_type::check_live(stack* s){
+		bool ret = true;
+		if(m_flag != FLAG_LOOP){
+			return	true;
+		}
+		if(m_status != STATUS_NULL)
+			return	true;
+		m_status = STATUS_CHECK;
+		if(m_loop_cnt >= ref_count()){
+			ret = false;
+			goto exit;
+		}
+
+		if(m_parent){
+			ret = m_parent->check_live(s);
+		}
+
+		if(!ret){
+			goto exit;
+		}
+
+		for(size_t i = 0; i < m_member_count; ++i){
+			if(m_class->m_members_define[i].m_type
+				== LOCAL_TYPE_OBJ){
+				ret =((obj*)m_members[i])->check_live(s);
+				if(!ret){
+					goto exit;
+				}
+			}
+		}
+exit:
+		m_status = STATUS_NULL;
+		return	ret;
+	}
+
+	bool user_type::reset(stack* s){
+		bool ret = true;
+		if(m_status != STATUS_NULL)
+			return	true;
+		m_status = STATUS_RESET;
+		m_flag = FLAG_NULL;
+		m_loop_cnt = 0;
+		if(m_parent){
+			m_parent->reset(s);
+		}
+		for(size_t i = 0; i < m_member_count; ++i){
+			if(m_class->m_members_define[i].m_type
+				== LOCAL_TYPE_OBJ){
+				((obj*)m_members[i])->reset(s);
+			}
+		}
+		m_status = STATUS_NULL;
+		return	ret;
+	}
+
+	//bool user_type::check(stack* s){
+	//	bool ret = true;
+	//	if(m_flag != FLAG_NULL){
+	//		recycle(s);
+	//		return	false;
+	//	}
+	//	m_flag = FLAG_CHECK;
+
+	//	if(m_parent){
+	//		m_parent->check(s);
+	//	}
+	//	for(size_t i = 0; i < m_member_count; ++i){
+	//		if(m_class->m_members_define[i].m_type
+	//			== LOCAL_TYPE_OBJ){
+	//			((obj*)m_members[i])->check(s);
+	//		}
+	//	}
+
+	//	m_flag = FLAG_NULL;
+	//	return	ret;
+	//}
+
 	s32	user_type::clear(stack* s){
 		//loop reference
-		if(m_flag != FLAG_NULL){
-			m_flag = FLAG_NULL;
+		if(m_status != STATUS_NULL){
+			m_status = STATUS_NULL;
 			return	SUCCESS;
 		}
-		m_flag = FLAG_CHECK;
+		m_status = STATUS_CLEAR;
 		obj* o = NULL;
-		for(u32 i = m_member_count; i > 0; --i){
+		u32 member_cnt = m_member_count;
+		for(u32 i = member_cnt; i > 0; --i){
 			if(m_class->member_type(i - 1)
 				== LOCAL_TYPE_OBJ){
 				o = (obj*)m_members[i - 1];
@@ -307,9 +390,10 @@ namespace zvm{
 		}
 		//(1) must before (2),we can not use any member 
 		//of a obj afer the memory is free
-		m_flag = FLAG_NULL;//(1)
+		m_status = STATUS_NULL;//(1)
+		this->user_type::~user_type();
 		s->free_mem(this, sizeof(user_type) 
-			+ m_member_count * sizeof(s64));//(2)
+			+ member_cnt * sizeof(s64));//(2)
 		return	SUCCESS;
 	}
 

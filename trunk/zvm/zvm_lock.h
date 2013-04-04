@@ -66,7 +66,7 @@ namespace zvm{
 		}
 
 	private:
-		T m_t;
+		T& m_t;
 		s32 m_p;
 	};
 
@@ -88,7 +88,7 @@ namespace zvm{
 		}
 
 	private:
-		T m_t;
+		T& m_t;
 		s32 m_p;
 	};
 
