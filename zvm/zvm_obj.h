@@ -7,6 +7,8 @@
 #include "be_atomic.h"
 #include <string>
 
+#define ZVM_ENTRY_DEBUG
+
 namespace zvm{
 
 	class stack;
@@ -16,12 +18,16 @@ namespace zvm{
 	public:
 
 		entry()
-			:m_ref_cnt(0){
-
+			:m_ref_cnt(1){
+#ifdef ZVM_ENTRY_DEBUG
+			++s_ent_cnt;
+#endif
 		}
 
 		virtual	~entry(){
-
+#ifdef ZVM_ENTRY_DEBUG
+			--s_ent_cnt;
+#endif
 		}
 
 		virtual	std::string type() const{
@@ -62,7 +68,7 @@ namespace zvm{
 
 		virtual	s32 recycle(stack* s){
 			be::s32 c = be::atomic_decreament32(&m_ref_cnt);
-			if(c < 0){
+			if(c <= 0){
 				return	clear(s);
 			}
 			return	SUCCESS;
@@ -76,21 +82,49 @@ namespace zvm{
 		virtual u32 get_member_count(){
 			return	0;
 		}
+
+		virtual bool check_live(stack* s){
+			return	true;
+		}
+
 		//check if loop reference
-		//if not return true;
-		virtual bool check(stack* s){
+		//if not return true;else return false
+		virtual bool sign(stack* s, bool first){
+			return	true;
+		}
+
+		virtual bool reset(stack* s){
 			return	true;
 		}
 
 		virtual obj* create_entry_obj(stack* s){
 			return	NULL;
 		}
-	public:
+
+		s32 ref_count(){
+			return	(s32)m_ref_cnt;
+		}
+
+		s32 inc_ref(){
+			return	be::atomic_increament32(&m_ref_cnt);
+		}
+
+		s32 dec_ref(){
+			return	be::atomic_decreament32(&m_ref_cnt);
+		}
+
+	private:
 		volatile be::s32 m_ref_cnt;
+
+#ifdef ZVM_ENTRY_DEBUG
+	public:
+		static int s_ent_cnt;
+#endif
 	};
 
 	class obj{
 	public:
+
 		obj(entry* ent = NULL)
 			:m_ent(ent){
 
@@ -98,14 +132,6 @@ namespace zvm{
 
 		~obj(){
 			set_entry((stack*)1, NULL);
-		}
-
-		s32 clear(stack* s){
-			return	set_entry(s, NULL);
-		}
-
-		s32	lock(stack* s){
-			return	m_lock.lock((s32)s);
 		}
 
 		s32 set_entry(stack* s, entry* ent){
@@ -119,6 +145,14 @@ namespace zvm{
 			}
 
 			return	SUCCESS;
+		}
+
+		s32 clear(stack* s){
+			return	set_entry(s, NULL);
+		}
+
+		s32	lock(stack* s){
+			return	m_lock.lock((s32)s);
 		}
 
 		entry* entry_reference(stack* s){
@@ -168,9 +202,27 @@ namespace zvm{
 			return	t;
 		}
 
-		bool check(stack* s){
+		bool sign(stack* s, bool fisrt){
+			lock(s);
+			auto_simple_unlock ul(m_lock, (s32)s);
 			if(m_ent)
-				return	m_ent->check(s);
+				return	m_ent->sign(s, fisrt);
+			return	true;
+		}
+
+		bool check_live(stack* s){
+			lock(s);
+			auto_simple_unlock ul(m_lock, (s32)s);
+			if(m_ent)
+				return	m_ent->check_live(s);
+			return	true;
+		}
+
+		bool reset(stack* s){
+			lock(s);
+			auto_simple_unlock ul(m_lock, (s32)s);
+			if(m_ent)
+				return	m_ent->reset(s);
 			return	true;
 		}
 
