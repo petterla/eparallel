@@ -315,6 +315,36 @@ namespace zvm{
 
 	}
 
+	static int zvm_gc_test(stack& s,
+		classdef& c){
+#ifdef ZVM_ENTRY_DEBUG
+		s32 cnt = entry::s_ent_cnt;
+#endif
+		obj* o = c.create_ent_obj(&s);	
+		obj* o1 = c.create_ent_obj(&s);	
+		entry* e = o->get_entry();
+		o1->set_member_o(&s, 2, o);
+		o->set_member_o(&s, 2, o1);
+		assert(o->get_member_count(&s) == c.member_count());
+		//s.deallocate(o);
+		bool ret = o->sign(&s, true);
+		assert(!ret);
+		ret = o->check_live(&s);
+		assert(ret);
+		s.deallocate(o);
+		s.deallocate(o1);
+
+#ifdef ZVM_ENTRY_DEBUG
+		assert(cnt < entry::s_ent_cnt);
+#endif
+		s32 n = gc::try_collect(-1);
+		assert(n > 0);
+#ifdef ZVM_ENTRY_DEBUG
+		assert(cnt == entry::s_ent_cnt);
+#endif
+		return	0;
+	}
+
 	int zvm_class_test(stack& s){
 
 		classdef c("test_class");
@@ -325,7 +355,7 @@ namespace zvm{
 
 		member m1;
 		m1.m_type = LOCAL_TYPE_FLOAT;
-		float f = 987654.321;
+		double f = 987654.321;
 		m1.m_val.m_default = *(s64*)&f;
 
 		member m2;
@@ -338,6 +368,7 @@ namespace zvm{
 		zvm_class_new_test(s, c);
 		zvm_class_assign_test(s, c);
 		zvm_loop_refence_test(s, c);
+		zvm_gc_test(s, c);
 
 		return	0;
 

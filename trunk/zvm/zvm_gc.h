@@ -4,6 +4,17 @@
 #include "zvm_obj.h"
 
 namespace zvm{
+
+	class type_gc;
+
+	class gc{
+	public:
+		static s32 add(type_gc* e);
+		static s32 del(type_gc* e);
+		static s32 try_collect(s32 cnt);
+	};
+
+
 	class type_gc:public entry{
 	public:
 		enum{
@@ -28,7 +39,11 @@ namespace zvm{
 			m_loop_cnt(0)
 
 		{
+			gc::add(this);
+		}
 
+		~type_gc(){
+			gc::del(this);
 		}
 
 		virtual s32 recycle(stack* s){
@@ -36,23 +51,35 @@ namespace zvm{
 			return	SUCCESS;
 		}
 
-		s32	try_collect(stack* s){
+		bool try_collect(stack* s){
 			if(ref_count() <= 0){
-				return	clear(s);
+				clear(s);
+				return	true;
 			}
 			if(sign(s, true) == false 
 				&& check_live(s) == false){
-				return	clear(s);
+				clear(s);
+				return	true;
 			}else{
 				reset(s);
 			}
+			return	false;
+		}
+
+		s32 set_ext(void* p){
+			m_ext_data = p;
 			return	SUCCESS;
+		}
+
+		void* get_ext(){
+			return	m_ext_data;
 		}
 
 	protected:
 		s32 m_status;
 		s32	m_flag;
 		s32 m_loop_cnt;
+		void* m_ext_data;
 	};
 }
 

@@ -46,7 +46,7 @@ namespace zvm{
 			m_cur_frame->frame::frame();
 			local_t* l = (local_t*)(m_cur_frame + sizeof(frame));
 			m_cur_frame->set_locals(l, 
-				(m_stack + STACK_DEFAULT_SIZE - (u8*)l) / sizeof(local_t));
+				(u32)(m_stack + STACK_DEFAULT_SIZE - (u8*)l) / sizeof(local_t));
 			m_cur_frame->set_prev_frame(p);
 			m_size++;
 			return	SUCCESS;
