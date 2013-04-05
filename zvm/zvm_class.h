@@ -51,18 +51,18 @@ namespace zvm{
 			return	m_init_function;
 		}
 		u32 member_function_count(){
-			return	m_member_functions.size();
+			return	(u32)m_member_functions.size();
 		}
 		function* get_member_function(u32 idx);
 		s32 add_member_function(function* f);
 		s32 override_member_function(u32 idx, function* f);
 		u32 static_field_count(){
-			return	m_static_fields.size();
+			return	(u32)m_static_fields.size();
 		}
 		obj* get_static_field(u32 idx);
 		s32 add_static_field(u32 type);
 		u32 member_count(){
-			return	m_members_define.size();
+			return	(u32)m_members_define.size();
 		}
 		s32 add_member(const member& m);
 		std::string& name();

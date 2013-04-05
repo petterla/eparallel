@@ -143,14 +143,14 @@ namespace zvm{
 	//create null member obj
 	entry* classdef::create_ent(stack* s){
 		user_type* t = (user_type*)
-			s->alloc_mem(sizeof(user_type) 
-			+ m_members_define.size() * sizeof(s64));
+			s->alloc_mem((u32)(sizeof(user_type) 
+			+ m_members_define.size() * sizeof(s64)));
 		if(!t){
 			s->set_exception(OUT_OF_MEM);
 			return	NULL;
 		}
 		t->user_type::user_type(this, 
-			m_members_define.size(), 
+			(u32)m_members_define.size(), 
 			(s64*)((s8*)t+sizeof(user_type)));
 
 		auto_recycle ac(t, s);
@@ -381,6 +381,7 @@ exit:
 			if(m_class->member_type(i - 1)
 				== LOCAL_TYPE_OBJ){
 				o = (obj*)m_members[i - 1];
+				o->force_clear(s);
 				s->deallocate(o);
 			}
 		}

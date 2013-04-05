@@ -124,7 +124,6 @@ namespace zvm{
 
 	class obj{
 	public:
-
 		obj(entry* ent = NULL)
 			:m_ent(ent){
 
@@ -151,14 +150,26 @@ namespace zvm{
 			return	set_entry(s, NULL);
 		}
 
+		s32 force_clear(stack* s){
+			entry* e = (entry*)m_ent;
+			lock(s);
+			m_ent = NULL;
+			unlock(s);
+			if(e){
+				return e->entry::recycle(s);
+			}
+
+			return	SUCCESS;
+		}
+
 		s32	lock(stack* s){
-			return	m_lock.lock((s32)s);
+			return	m_lock.lock((s32)(s64)s);
 		}
 
 		entry* entry_reference(stack* s){
 
 			lock(s);
-			auto_simple_unlock ul(m_lock, (s32)s);
+			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 
 			if(m_ent){
 				return	m_ent->reference(s);
@@ -168,7 +179,7 @@ namespace zvm{
 
 		entry* entry_clone(stack* s){
 			lock(s);
-			auto_simple_unlock ul(m_lock, (s32)s);
+			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 
 			if(m_ent){
 				return	m_ent->clone(s);
@@ -185,7 +196,7 @@ namespace zvm{
 		}
 
 		s32 unlock(stack* s){
-			return	m_lock.unlock((s32)s);
+			return	m_lock.unlock((s32)(s64)s);
 		}
 
 		s32 is_null(){
@@ -204,7 +215,7 @@ namespace zvm{
 
 		bool sign(stack* s, bool fisrt){
 			lock(s);
-			auto_simple_unlock ul(m_lock, (s32)s);
+			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 			if(m_ent)
 				return	m_ent->sign(s, fisrt);
 			return	true;
@@ -212,7 +223,7 @@ namespace zvm{
 
 		bool check_live(stack* s){
 			lock(s);
-			auto_simple_unlock ul(m_lock, (s32)s);
+			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 			if(m_ent)
 				return	m_ent->check_live(s);
 			return	true;
@@ -220,7 +231,7 @@ namespace zvm{
 
 		bool reset(stack* s){
 			lock(s);
-			auto_simple_unlock ul(m_lock, (s32)s);
+			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 			if(m_ent)
 				return	m_ent->reset(s);
 			return	true;
@@ -235,14 +246,14 @@ namespace zvm{
 
 		obj* create_entry_obj(stack* s){
 			lock(s);
-			auto_simple_unlock ul(m_lock, (s32)s);
+			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 			assert(m_ent);
 			return	m_ent->create_entry_obj(s);
 		}
 
 		s64 get_member_i(stack* s, u32 idx){
 			lock(s);
-			auto_simple_unlock ul(m_lock, (s32)s);
+			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 			assert(m_ent);
 
 			return	m_ent->get_member_i(s, idx);
@@ -250,28 +261,28 @@ namespace zvm{
 
 		obj* get_member_o(stack* s, u32 idx){
 			lock(s);
-			auto_simple_unlock ul(m_lock, (s32)s);
+			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 			assert(m_ent);
 			return	m_ent->get_member_o(s, idx);
 		}
 
 		s32 set_member_i(stack* s, u32 idx, s64 i){
 			lock(s);
-			auto_simple_unlock ul(m_lock, (s32)s);
+			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 			assert(m_ent);
 			return	m_ent->set_member_i(s, idx, i);
 		}
 
 		s32 set_member_o(stack* s, u32 idx, obj* o){
 			lock(s);
-			auto_simple_unlock ul(m_lock, (s32)s);
+			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 			assert(m_ent);
 			return	m_ent->set_member_o(s, idx, o);
 		}
 
 		u32 get_member_count(stack* s){
 			lock(s);
-			auto_simple_unlock ul(m_lock, (s32)s);
+			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 			assert(m_ent);
 			return	m_ent->get_member_count();
 		}
