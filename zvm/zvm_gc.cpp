@@ -1,5 +1,6 @@
 #include "zvm_gc.h"
 #include "zvm_stack.h"
+#include "zvm_lock.h"
 
 namespace zvm{
 	stack	g_gc_stack;
@@ -26,21 +27,25 @@ namespace zvm{
 			m_cur = &m_head;
 		}
 		s32 add(entnode* n){
+			m_lock.lock(0);
 			n->m_prev = m_head.m_prev;
 			m_head.m_prev->m_next = n;
 			n->m_next = &m_head;
 			m_head.m_prev = n;
 			++m_size;
+			m_lock.unlock(0);
 			assert(m_size > 0);
 
 			return	SUCCESS;
 		}
 		s32 del(entnode* n){
+			m_lock.lock(0);
 			n->m_prev->m_next = n->m_next;
 			n->m_next->m_prev = n->m_prev;
 			n->m_prev = NULL;
 			n->m_next = NULL;
 			--m_size;
+			m_lock.unlock(0);
 			assert(m_size >= 0);
 
 			return	SUCCESS;
@@ -49,16 +54,20 @@ namespace zvm{
 			if(!m_size){
 				return	NULL;
 			}
-			entnode* e = m_cur;
+			entnode* e = NULL;
+			m_lock.lock(0);
+			e = m_cur;
 			if(e == &m_head)
 				e = e->m_next;
 			m_cur = e->m_next;
+			m_lock.unlock(0);
 			return	e;
 		}
 		s32 size(){
 			return	m_size;
 		}
 	private:
+		spin_lock m_lock;
 		entnode  m_head;
 		entnode* m_cur;
 		s32 m_size;
