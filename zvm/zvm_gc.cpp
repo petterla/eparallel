@@ -54,14 +54,27 @@ namespace zvm{
 			if(!m_size){
 				return	NULL;
 			}
-			entnode* e = NULL;
 			m_lock.lock(0);
+			entnode* e = NULL;
 			e = m_cur;
 			if(e == &m_head)
 				e = e->m_next;
 			m_cur = e->m_next;
 			m_lock.unlock(0);
 			return	e;
+		}
+		//do not lock,because if type_gc,it can only 
+		//destory at the gc thread
+		//so n in (1) is always safe!
+		s32 check_one_node(){
+			s32 num = 0;
+	
+			entnode* n = get();//(1)
+			if(n){
+				num += n->m_e->try_collect(&g_gc_stack);
+			}
+
+			return	num;
 		}
 		s32 size(){
 			return	m_size;
@@ -100,10 +113,7 @@ namespace zvm{
 			total = g_e_list.size();
 		}
 		for(int i = 0; i < total; ++i){
-			entnode* n = g_e_list.get();
-			if(n){
-				num += n->m_e->try_collect(&g_gc_stack);
-			}
+			num += g_e_list.check_one_node();
 		}	
 		return	num;
 	}
