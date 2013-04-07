@@ -21,7 +21,8 @@ namespace zvm{
 	
 	class	entlist{
 	public:
-		entlist():m_size(0){
+		entlist(stack& s)
+			:m_size(0),m_stack(s){
 			m_head.m_next = &m_head;
 			m_head.m_prev = &m_head;
 			m_cur = &m_head;
@@ -40,12 +41,16 @@ namespace zvm{
 		}
 		s32 del(entnode* n){
 			m_lock.lock(0);
+			if(n == m_cur){
+				m_cur = n->m_next;
+			}
 			n->m_prev->m_next = n->m_next;
 			n->m_next->m_prev = n->m_prev;
-			n->m_prev = NULL;
-			n->m_next = NULL;
 			--m_size;
 			m_lock.unlock(0);
+			n->m_prev = NULL;
+			n->m_next = NULL;
+			m_stack.free_mem(n, sizeof(entnode));
 			assert(m_size >= 0);
 
 			return	SUCCESS;
@@ -54,8 +59,8 @@ namespace zvm{
 			if(!m_size){
 				return	NULL;
 			}
-			m_lock.lock(0);
 			entnode* e = NULL;
+			m_lock.lock(0);
 			e = m_cur;
 			if(e == &m_head)
 				e = e->m_next;
@@ -84,9 +89,10 @@ namespace zvm{
 		entnode  m_head;
 		entnode* m_cur;
 		s32 m_size;
+		stack& m_stack;
 	};
 
-	static entlist g_e_list;
+	static entlist g_e_list(g_gc_stack);
 
 	s32 gc::add(type_gc* e){
 		entnode* n = (entnode*)g_gc_stack.alloc_mem(sizeof(entnode));
