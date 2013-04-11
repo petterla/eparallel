@@ -8,7 +8,7 @@ namespace zvm{
 	struct entnode{
 		entnode* m_prev;
 		entnode* m_next;
-		type_gc* m_e;
+		gc_type* m_e;
 
 		entnode():
 			m_prev(NULL),
@@ -92,9 +92,74 @@ namespace zvm{
 		stack& m_stack;
 	};
 
+
+	bool gc_type::find_loop(stack* s, entry* e, bool first){
+		bool ret = true;
+		if(!first)
+			++m_loop_cnt;
+
+		//loop path
+		if(m_status != STATUS_NULL){
+			if((entry*)this == e){
+				m_flag = FLAG_LOOP;
+				return	false;
+			}
+			return	true;
+		}
+		m_status = STATUS_SIGN;
+		begin(s);
+		for(obj* r = get_refer_obj(s);r;r = get_refer_obj(s)){
+			ret = ret && r->find_loop(s, e, false);
+		}
+		if(!ret)
+			m_flag = FLAG_LOOP;
+		m_status = STATUS_NULL;
+		return	ret;
+	}
+
+	bool gc_type::check_live(stack* s){
+		bool ret = true;
+		if(m_flag != FLAG_LOOP){
+			return	true;
+		}
+		if(m_status != STATUS_NULL)
+			return	true;
+		m_status = STATUS_CHECK;
+		if(m_loop_cnt >= ref_count()){
+			ret = false;
+			goto exit;
+		}
+
+		begin(s);
+		for(obj* r = get_refer_obj(s);r;r = get_refer_obj(s)){
+			ret = r->check_live(s);
+			if(!ret){
+				goto exit;
+			}
+		}
+exit:
+		m_status = STATUS_NULL;
+		return	ret;
+	}
+
+	bool gc_type::reset(stack* s){
+		bool ret = true;
+		if(m_status != STATUS_NULL)
+			return	true;
+		m_status = STATUS_RESET;
+		m_flag = FLAG_NULL;
+		m_loop_cnt = 0;
+		begin(s);
+		for(obj* r = get_refer_obj(s);r;r = get_refer_obj(s)){
+			r->reset(s);
+		}
+		m_status = STATUS_NULL;
+		return	ret;
+	}
+
 	static entlist g_e_list(g_gc_stack);
 
-	s32 gc::add(type_gc* e){
+	s32 gc::add(gc_type* e){
 		entnode* n = (entnode*)g_gc_stack.alloc_mem(sizeof(entnode));
 		if(n){
 			n->entnode::entnode();
@@ -105,7 +170,7 @@ namespace zvm{
 		}
 		return	OUT_OF_MEM;
 	}
-	s32 gc::del(type_gc* e){
+	s32 gc::del(gc_type* e){
 		entnode* n = (entnode*)e->get_ext();
 		if(n){
 			g_e_list.del(n);

@@ -5,25 +5,25 @@
 
 namespace zvm{
 
-	class type_gc;
+	class gc_type;
 
 	class gc{
 	public:
-		static s32 add(type_gc* e);
-		static s32 del(type_gc* e);
+		static s32 add(gc_type* e);
+		static s32 del(gc_type* e);
 		static s32 try_collect(s32 cnt);
 	};
 
 
-	class type_gc:public entry{
+	class gc_type:public entry{
 	public:
 		enum{
-			STATUS_NULL = -1,
-			STATUS_SIGN = 0,
-			STATUS_CHECK = 1,
-			STATUS_CLONE = 2,
-			STATUS_CLEAR = 3,
-			STATUS_RESET = 4,
+			STATUS_NULL = 0,
+			STATUS_SIGN = 1,
+			STATUS_CHECK = 2,
+			STATUS_CLONE = 3,
+			STATUS_CLEAR = 4,
+			STATUS_RESET = 5,
 		};
 
 		enum{
@@ -33,7 +33,7 @@ namespace zvm{
 
 
 
-		type_gc()
+		gc_type()
 			:m_status(STATUS_NULL),
 			m_flag(FLAG_NULL),
 			m_loop_cnt(0)
@@ -42,8 +42,17 @@ namespace zvm{
 			gc::add(this);
 		}
 
-		~type_gc(){
+		~gc_type(){
 			gc::del(this);
+		}
+
+
+		s32& status(){
+			return	m_status;
+		}
+
+		s32& flag(){
+			return	m_flag;
 		}
 
 		virtual s32 recycle(stack* s){
@@ -56,7 +65,7 @@ namespace zvm{
 				clear(s);
 				return	true;
 			}
-			if(sign(s, true) == false 
+			if(find_loop(s, this, true) == false 
 				&& check_live(s) == false){
 				clear(s);
 				return	true;
@@ -75,10 +84,27 @@ namespace zvm{
 			return	m_ext_data;
 		}
 
-	protected:
+		virtual bool find_loop(stack* s, entry* e,bool first);
+
+		virtual bool check_live(stack* s);
+
+		virtual bool reset(stack* s);
+
+
+		//get first refer obj
+		virtual void begin(stack* s){
+	
+		}
+
+		//get nest refer obj
+		virtual obj* get_refer_obj(stack* s){
+			return	NULL;
+		}
+
+	private:
 		s32 m_status;
-		s32	m_flag;
-		s32 m_loop_cnt;
+		s32 m_flag;
+		u32 m_loop_cnt;
 		void* m_ext_data;
 	};
 }

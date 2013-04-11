@@ -89,7 +89,7 @@ namespace zvm{
 
 		//check if loop reference
 		//if not return true;else return false
-		virtual bool sign(stack* s, bool first){
+		virtual bool find_loop(stack* s, entry* e, bool first){
 			return	true;
 		}
 
@@ -213,11 +213,11 @@ namespace zvm{
 			return	t;
 		}
 
-		bool sign(stack* s, bool fisrt){
+		bool find_loop(stack* s, entry* e, bool fisrt){
 			lock(s);
 			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 			if(m_ent)
-				return	m_ent->sign(s, fisrt);
+				return	m_ent->find_loop(s, e, fisrt);
 			return	true;
 		}
 
