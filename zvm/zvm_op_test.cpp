@@ -294,12 +294,12 @@ namespace zvm{
 		o->set_member_o(&s, 2, o);
 		assert(o->get_member_count(&s) == c.member_count());
 		//s.deallocate(o);
-		bool ret = o->sign(&s, true);
+		bool ret = o->find_loop(&s, e, true);
 		assert(!ret);
 		ret = o->check_live(&s);
 		assert(ret);
 		s.deallocate(o);
-		ret = e->sign(&s, true);
+		ret = e->find_loop(&s, e, true);
 		assert(!ret);
 		ret = e->check_live(&s);
 		assert(!ret);
@@ -322,17 +322,20 @@ namespace zvm{
 #endif
 		obj* o = c.create_ent_obj(&s);	
 		obj* o1 = c.create_ent_obj(&s);	
+		obj* o2 = c.create_ent_obj(&s);	
 		entry* e = o->get_entry();
 		o1->set_member_o(&s, 2, o);
+		o1->set_member_o(&s, 3, o2);
 		o->set_member_o(&s, 2, o1);
 		assert(o->get_member_count(&s) == c.member_count());
 		//s.deallocate(o);
-		bool ret = o->sign(&s, true);
+		bool ret = o->find_loop(&s, e, true);
 		assert(!ret);
 		ret = o->check_live(&s);
 		assert(ret);
 		s.deallocate(o);
 		s.deallocate(o1);
+		s.deallocate(o2);
 
 #ifdef ZVM_ENTRY_DEBUG
 		assert(cnt < entry::s_ent_cnt);
@@ -361,9 +364,13 @@ namespace zvm{
 		member m2;
 		m2.m_type = LOCAL_TYPE_OBJ;
 
+		member m3;
+		m3.m_type = LOCAL_TYPE_OBJ;
+
 		c.add_member(m0);
 		c.add_member(m1);
 		c.add_member(m2);
+		c.add_member(m3);
 
 		zvm_class_new_test(s, c);
 		zvm_class_assign_test(s, c);

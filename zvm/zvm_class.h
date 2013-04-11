@@ -97,7 +97,7 @@ namespace zvm{
 	/*****************************
 
 	*****************************/
-	class user_type:public type_gc{
+	class user_type:public gc_type{
 	public:
 
 		user_type(classdef* c,
@@ -106,9 +106,11 @@ namespace zvm{
 		~user_type();
 		virtual s32 init(stack* s);
 		virtual entry* clone(stack* s);
-		virtual bool sign(stack* s, bool first);
-		virtual bool check_live(stack* s);
-		virtual bool reset(stack* s);
+		//virtual bool sign(stack* s, bool first);
+		//virtual bool check_live(stack* s);
+		//virtual bool reset(stack* s);
+		virtual void begin(stack* s);
+		virtual obj* get_refer_obj(stack* s);
 		virtual s32 init_super(stack* s);
 		virtual s32 clear(stack* s);
 		virtual u32 get_member_count();
@@ -123,6 +125,7 @@ namespace zvm{
 		u32 m_member_count;
 		s64* m_members;
 		s32  m_flag;
+		u32 m_cursor;
 	};
 
 }

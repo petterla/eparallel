@@ -182,7 +182,7 @@ namespace zvm{
 		m_parent(NULL),
 		m_member_count(member_cnt),
 		m_members(members),
-		m_flag(FLAG_NULL)
+		m_cursor(0)
 	{
 		memset(members, 0, member_cnt * sizeof(s64));
 	}
@@ -217,12 +217,12 @@ namespace zvm{
 
 	entry* user_type::clone(stack* s){
 		//avoid loop clone
-		if(m_status != STATUS_NULL){
-			m_status = STATUS_NULL;
+		if(status() != STATUS_NULL){
+			status() = STATUS_NULL;
 			return	this;
 		}
 
-		m_status = STATUS_CLONE;
+		status() = STATUS_CLONE;
 		//do clone,
 		user_type* t = (user_type*)
 			s->alloc_mem(sizeof(user_type) 
@@ -262,119 +262,135 @@ namespace zvm{
 				return	NULL;
 		}
 		ac.set_entry(NULL);
-		m_status = STATUS_NULL;
+		status() = STATUS_NULL;
 		return	t;
 
 	}
 
-	bool user_type::sign(stack* s, bool first){
-		bool ret = true;
-		if(!first)
-			++m_loop_cnt;
-		if(m_status != STATUS_NULL){
-			m_flag = FLAG_LOOP;
-			return	false;
-		}
-		m_status = STATUS_SIGN;
-		if(m_parent){
-			m_parent->sign(s, false);
-		}
-		for(size_t i = 0; i < m_member_count; ++i){
-			if(m_class->m_members_define[i].m_type
-				== LOCAL_TYPE_OBJ){
-					((obj*)m_members[i])->sign(s, false);
-			}
-		}
-		if(m_flag == FLAG_LOOP)
-			ret = false;
-		m_status = STATUS_NULL;
-		return	ret;
-	}
-
-	bool user_type::check_live(stack* s){
-		bool ret = true;
-		if(m_flag != FLAG_LOOP){
-			return	true;
-		}
-		if(m_status != STATUS_NULL)
-			return	true;
-		m_status = STATUS_CHECK;
-		if(m_loop_cnt >= ref_count()){
-			ret = false;
-			goto exit;
-		}
-
-		if(m_parent){
-			ret = m_parent->check_live(s);
-		}
-
-		if(!ret){
-			goto exit;
-		}
-
-		for(size_t i = 0; i < m_member_count; ++i){
-			if(m_class->m_members_define[i].m_type
-				== LOCAL_TYPE_OBJ){
-				ret =((obj*)m_members[i])->check_live(s);
-				if(!ret){
-					goto exit;
-				}
-			}
-		}
-exit:
-		m_status = STATUS_NULL;
-		return	ret;
-	}
-
-	bool user_type::reset(stack* s){
-		bool ret = true;
-		if(m_status != STATUS_NULL)
-			return	true;
-		m_status = STATUS_RESET;
-		m_flag = FLAG_NULL;
-		m_loop_cnt = 0;
-		if(m_parent){
-			m_parent->reset(s);
-		}
-		for(size_t i = 0; i < m_member_count; ++i){
-			if(m_class->m_members_define[i].m_type
-				== LOCAL_TYPE_OBJ){
-				((obj*)m_members[i])->reset(s);
-			}
-		}
-		m_status = STATUS_NULL;
-		return	ret;
-	}
-
-	//bool user_type::check(stack* s){
+	//bool gc_type::sign(stack* s, bool first){
 	//	bool ret = true;
-	//	if(m_flag != FLAG_NULL){
-	//		recycle(s);
+	//	if(!first)
+	//		++m_loop_cnt;
+	//	if(status() != STATUS_NULL){
+	//		flag() = FLAG_LOOP;
 	//		return	false;
 	//	}
-	//	m_flag = FLAG_CHECK;
-
+	//	status() = STATUS_SIGN;
 	//	if(m_parent){
-	//		m_parent->check(s);
+	//		m_parent->sign(s, false);
 	//	}
 	//	for(size_t i = 0; i < m_member_count; ++i){
 	//		if(m_class->m_members_define[i].m_type
 	//			== LOCAL_TYPE_OBJ){
-	//			((obj*)m_members[i])->check(s);
+	//				((obj*)m_members[i])->sign(s, false);
 	//		}
 	//	}
-
-	//	m_flag = FLAG_NULL;
+	//	if(flag() == FLAG_LOOP)
+	//		ret = false;
+	//	status() = STATUS_NULL;
 	//	return	ret;
 	//}
 
+//	bool user_type::check_live(stack* s){
+//		bool ret = true;
+//		if(flag() != FLAG_LOOP){
+//			return	true;
+//		}
+//		if(status() != STATUS_NULL)
+//			return	true;
+//		status() = STATUS_CHECK;
+//		if(m_loop_cnt >= ref_count()){
+//			ret = false;
+//			goto exit;
+//		}
+//
+//		if(m_parent){
+//			ret = m_parent->check_live(s);
+//		}
+//
+//		if(!ret){
+//			goto exit;
+//		}
+//
+//		for(size_t i = 0; i < m_member_count; ++i){
+//			if(m_class->m_members_define[i].m_type
+//				== LOCAL_TYPE_OBJ){
+//				ret =((obj*)m_members[i])->check_live(s);
+//				if(!ret){
+//					goto exit;
+//				}
+//			}
+//		}
+//exit:
+//		status() = STATUS_NULL;
+//		return	ret;
+//	}
+
+	//bool user_type::reset(stack* s){
+	//	bool ret = true;
+	//	if(status() != STATUS_NULL)
+	//		return	true;
+	//	status() = STATUS_RESET;
+	//	flag() = FLAG_NULL;
+	//	m_loop_cnt = 0;
+	//	if(m_parent){
+	//		m_parent->reset(s);
+	//	}
+	//	for(size_t i = 0; i < m_member_count; ++i){
+	//		if(m_class->m_members_define[i].m_type
+	//			== LOCAL_TYPE_OBJ){
+	//			((obj*)m_members[i])->reset(s);
+	//		}
+	//	}
+	//	status() = STATUS_NULL;
+	//	return	ret;
+	//}
+
+
+	void user_type::begin(stack* s){
+		m_cursor = 0;
+	}
+
+	obj* user_type::get_refer_obj(stack* s){
+		obj* ret = NULL;
+		if(m_parent){
+			if(m_cursor == 0){
+				++m_cursor;
+				return	m_parent;
+			}
+			if(m_cursor == m_member_count + 1){
+				return	NULL;
+			}
+			for(; m_cursor < m_member_count + 1;++m_cursor){
+				if(m_class->m_members_define[m_cursor - 1].m_type
+					== LOCAL_TYPE_OBJ)
+					ret = (obj*)m_members[m_cursor - 1];
+					++m_cursor;
+					return	ret;
+			}
+		}else{
+			if(m_cursor == m_member_count){
+				return	NULL;
+			}
+			for(; m_cursor < m_member_count;++m_cursor){
+				if(m_class->m_members_define[m_cursor].m_type
+					== LOCAL_TYPE_OBJ){
+					ret = (obj*)m_members[m_cursor];
+					++m_cursor;
+					return	ret;
+				}
+			}
+		}
+		return	NULL;
+	}
+
 	s32	user_type::clear(stack* s){
 		//loop reference
-		if(m_status != STATUS_NULL){
-			m_status = STATUS_NULL;
+		if(status() != STATUS_NULL){
+			status() = STATUS_NULL;
 			return	SUCCESS;
 		}
-		m_status = STATUS_CLEAR;
+		status() = STATUS_CLEAR;
 		obj* o = NULL;
 		u32 member_cnt = m_member_count;
 		for(u32 i = member_cnt; i > 0; --i){
@@ -391,7 +407,7 @@ exit:
 		}
 		//(1) must before (2),we can not use any member 
 		//of a obj afer the memory is free
-		m_status = STATUS_NULL;//(1)
+		status() = STATUS_NULL;//(1)
 		this->user_type::~user_type();
 		s->free_mem(this, sizeof(user_type) 
 			+ member_cnt * sizeof(s64));//(2)
