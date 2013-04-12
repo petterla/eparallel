@@ -84,9 +84,9 @@ namespace zvm{
 	struct ineg{};
 	struct ixnot{};
 	struct iinc{};
-	struct not{};
-	struct and{};
-	struct or{};
+	struct inot{};
+	struct iand{};
+	struct ior{};
 	struct monenter{};
 	struct monexit{};
 	struct aload{
@@ -181,9 +181,9 @@ namespace zvm{
 			struct ineg   m_ineg;
 			struct ixnot  m_ixnot;
 			struct iinc   m_iinc;
-			struct not    m_not;
-			struct and    m_and;
-			struct or     m_or;
+			struct inot   m_not;
+			struct iand   m_and;
+			struct ior    m_or;
 			struct monenter m_monenter;
 			struct monexit  m_monexit;
 			struct aload    m_aload;

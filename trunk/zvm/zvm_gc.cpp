@@ -162,7 +162,7 @@ exit:
 	s32 gc::add(gc_type* e){
 		entnode* n = (entnode*)g_gc_stack.alloc_mem(sizeof(entnode));
 		if(n){
-			n->entnode::entnode();
+			new (n) entnode();
 			n->m_e = e;
 			e->set_ext(n);
 			g_e_list.add(n);

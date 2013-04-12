@@ -149,7 +149,7 @@ namespace zvm{
 			s->set_exception(OUT_OF_MEM);
 			return	NULL;
 		}
-		t->user_type::user_type(this, 
+		new (t) user_type(this, 
 			(u32)m_members_define.size(), 
 			(s64*)((s8*)t+sizeof(user_type)));
 
@@ -196,7 +196,7 @@ namespace zvm{
 			return	f->process(s);
 		}
 
-		return	SUCCESS;
+		return	ret;
 	}
 
 	s32 user_type::init_super(stack* s){
@@ -208,7 +208,7 @@ namespace zvm{
 			return	f->process(s);
 		}
 
-		return	SUCCESS;
+		return	ret;
 	}
 
 	user_type::~user_type(){
@@ -231,7 +231,7 @@ namespace zvm{
 			s->set_exception(OUT_OF_MEM);
 			return	NULL;
 		}
-		t->user_type::user_type(m_class, 
+		new (t) user_type(m_class, 
 			m_member_count, 
 			(s64*)((s8*)t+sizeof(user_type)));
 
