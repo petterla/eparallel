@@ -78,9 +78,9 @@ namespace zvm{
 		s.eax() = 7;
 		s.ebx() = 4;
 
-		operation	or;
-		or.m_op_code = IREM;
-		assert(SUCCESS == op_process(&or,&s));
+		operation	ior;
+		ior.m_op_code = IREM;
+		assert(SUCCESS == op_process(&ior,&s));
 		assert(7 % 4 == s.eax());
 		assert(0 == s.get_op_stack().size());
 
@@ -219,6 +219,7 @@ namespace zvm{
 		time_t n = time(NULL);
 
 		int ret = f.process(&s);
+		assert(ret == SUCCESS);
 		s64 j = s.eax();
 		assert(0 == s.current_frame().size());
 
