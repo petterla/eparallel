@@ -13,9 +13,9 @@ namespace zvm{
 		stack	s;
 		s.push_frame();
 		
-		//zvm_push_pop_test(s);
-		//zvm_int_op_test(s);
-		//zvm_function_test(s);
+		zvm_push_pop_test(s);
+		zvm_int_op_test(s);
+		zvm_function_test(s);
 		zvm_class_test(s);
 
 		return	0;
@@ -295,12 +295,12 @@ namespace zvm{
 		assert(o->get_member_count(&s) == c.member_count());
 		//s.deallocate(o);
 		bool ret = o->find_loop(&s, e, true);
-		assert(!ret);
+		assert(ret);
 		ret = o->check_live(&s);
 		assert(ret);
 		s.deallocate(o);
 		ret = e->find_loop(&s, e, true);
-		assert(!ret);
+		assert(ret);
 		ret = e->check_live(&s);
 		assert(!ret);
 		e->recycle(&s);
@@ -330,7 +330,7 @@ namespace zvm{
 		assert(o->get_member_count(&s) == c.member_count());
 		//s.deallocate(o);
 		bool ret = o->find_loop(&s, e, true);
-		assert(!ret);
+		assert(ret);
 		ret = o->check_live(&s);
 		assert(ret);
 		s.deallocate(o);

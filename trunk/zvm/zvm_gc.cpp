@@ -94,7 +94,7 @@ namespace zvm{
 
 
 	bool gc_type::find_loop(stack* s, entry* e, bool first){
-		bool ret = true;
+		bool ret = false;
 		if(!first)
 			++m_loop_cnt;
 
@@ -102,16 +102,16 @@ namespace zvm{
 		if(m_status != STATUS_NULL){
 			if((entry*)this == e){
 				m_flag = FLAG_LOOP;
-				return	false;
+				return	true;
 			}
-			return	true;
+			return	false;
 		}
 		m_status = STATUS_SIGN;
 		begin(s);
 		for(obj* r = get_refer_obj(s);r;r = get_refer_obj(s)){
-			ret = ret && r->find_loop(s, e, false);
+			ret = ret || r->find_loop(s, e, false);
 		}
-		if(!ret)
+		if(ret)
 			m_flag = FLAG_LOOP;
 		m_status = STATUS_NULL;
 		return	ret;
