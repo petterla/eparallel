@@ -65,7 +65,7 @@ namespace zvm{
 				clear(s);
 				return	true;
 			}
-			if(find_loop(s, this, true) == false 
+			if(find_loop(s, this, true) == true 
 				&& check_live(s) == false){
 				clear(s);
 				return	true;
@@ -104,7 +104,7 @@ namespace zvm{
 	private:
 		s32 m_status;
 		s32 m_flag;
-		u32 m_loop_cnt;
+		s32 m_loop_cnt;
 		void* m_ext_data;
 	};
 }

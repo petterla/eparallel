@@ -90,7 +90,7 @@ namespace zvm{
 		//check if loop reference
 		//if not return true;else return false
 		virtual bool find_loop(stack* s, entry* e, bool first){
-			return	true;
+			return	false;
 		}
 
 		virtual bool reset(stack* s){
