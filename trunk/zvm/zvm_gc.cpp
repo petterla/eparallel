@@ -133,7 +133,7 @@ namespace zvm{
 		begin(s);
 		for(obj* r = get_refer_obj(s);r;r = get_refer_obj(s)){
 			ret = r->check_live(s);
-			if(!ret){
+			if(ret){
 				goto exit;
 			}
 		}
