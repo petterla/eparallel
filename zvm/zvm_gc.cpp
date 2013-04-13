@@ -99,7 +99,7 @@ namespace zvm{
 	bool gc_type::find_loop(stack* s, entry* e, bool first){
 		bool ret = false;
 		//loop path
-		if(m_status != STATUS_NULL){
+		if(m_status == STATUS_SIGN){
 			if((entry*)this == e){
 				ret = true;
 				goto exit;
@@ -141,9 +141,9 @@ exit:
 			ret = true;
 			goto exit;
 		}
-		if(m_status != STATUS_NULL){
+		if(m_status == STATUS_CHECK){
 			ZVM_DEBUG_PRINT("check_live:%p ,loop_cnt:%d ,ref_cnt:%d "
-				",flag:%d, m_status != STATUS_NULL, not live\n",
+				",flag:%d, m_status == STATUS_CHECK, not live\n",
 				this, m_loop_cnt, ref_count(), m_flag);
 			ret = false;
 			goto exit;
@@ -157,14 +157,16 @@ exit:
 				goto exit;
 			}
 		}
-exit:
 		m_status = STATUS_NULL;
+exit:
 		return	ret;
 	}
 
-	bool gc_type::reset(stack* s){
+	bool gc_type::reset(stack* s, bool force){
 		bool ret = true;
-		if(m_status != STATUS_NULL)
+		if(force)
+			m_status = STATUS_NULL;
+		if(m_status == STATUS_RESET)
 			return	true;
 		m_status = STATUS_RESET;
 		m_flag = FLAG_NULL;

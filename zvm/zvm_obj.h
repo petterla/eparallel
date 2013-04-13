@@ -93,7 +93,7 @@ namespace zvm{
 			return	false;
 		}
 
-		virtual bool reset(stack* s){
+		virtual bool reset(stack* s, bool force = false){
 			return	true;
 		}
 
