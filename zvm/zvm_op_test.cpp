@@ -321,32 +321,117 @@ namespace zvm{
 #ifdef ZVM_ENTRY_DEBUG
 		s32 cnt = entry::s_ent_cnt;
 #endif
+		// o->o1
+		//  ->o2
+		// o1->o
+		// o2->o
+		std::cout << "create_ent_obj o" <<std::endl;
 		obj* o = c.create_ent_obj(&s);	
+		std::cout << "create_ent_obj o1" <<std::endl;
 		obj* o1 = c.create_ent_obj(&s);	
+		std::cout << "create_ent_obj o2" <<std::endl;
 		obj* o2 = c.create_ent_obj(&s);	
+		std::cout << "create_ent_obj o3" <<std::endl;
+		obj* o3 = s.allocate(NULL);
+		o3->assign(&s, o2);
 		entry* e = o->get_entry();
 		o1->set_member_o(&s, 2, o);
-		o1->set_member_o(&s, 3, o2);
 		o->set_member_o(&s, 2, o1);
+		o->set_member_o(&s, 3, o2);
+		o2->set_member_o(&s, 2, o);
 		assert(o->get_member_count(&s) == c.member_count());
 		//s.deallocate(o);
 		bool ret = o->find_loop(&s, e, true);
 		assert(ret);
 		ret = o->check_live(&s);
 		assert(ret);
+		std::cout << "deallocate o" <<std::endl;
 		s.deallocate(o);
+		std::cout << "deallocate o1" <<std::endl;
 		s.deallocate(o1);
+		std::cout << "deallocate o2" <<std::endl;
 		s.deallocate(o2);
 
+		e->reset(&s);
+		ret = e->find_loop(&s, e, true);
+		assert(ret);
+		ret = e->check_live(&s);
+		assert(ret);
 #ifdef ZVM_ENTRY_DEBUG
 		assert(cnt < entry::s_ent_cnt);
 #endif
 		s32 n = gc::try_collect(-1);
+		assert(n == 0);
+		std::cout << "deallocate o3" <<std::endl;
+		s.deallocate(o3);
+		e->reset(&s);
+		ret = e->find_loop(&s, e, true);
+		assert(ret);
+		ret = e->check_live(&s);
+		assert(!ret);
+		e->reset(&s);
+		n = gc::try_collect(-1);
 		assert(n > 0);
 #ifdef ZVM_ENTRY_DEBUG
 		assert(cnt == entry::s_ent_cnt);
 #endif
 		return	0;
+	}
+
+
+	static int zvm_gc_test1(stack& s,
+		classdef& c){
+#ifdef ZVM_ENTRY_DEBUG
+			s32 cnt = entry::s_ent_cnt;
+#endif
+			// o->o1
+			//  ->o2
+			// o1->o
+			// o2->o
+			std::cout << "create_ent_obj o" <<std::endl;
+			obj* o = c.create_ent_obj(&s);	
+			std::cout << "create_ent_obj o1" <<std::endl;
+			obj* o1 = c.create_ent_obj(&s);	
+			std::cout << "create_ent_obj o2" <<std::endl;
+			obj* o2 = c.create_ent_obj(&s);	
+			std::cout << "create_ent_obj o3" <<std::endl;
+			obj* o3 = s.allocate(NULL);
+			o3->assign(&s, o2);
+			entry* e = o->get_entry();
+			o1->set_member_o(&s, 2, o);
+			o->set_member_o(&s, 2, o1);
+			o->set_member_o(&s, 3, o2);
+			assert(o->get_member_count(&s) == c.member_count());
+			//s.deallocate(o);
+			bool ret = o->find_loop(&s, e, true);
+			assert(ret);
+			ret = o->check_live(&s);
+			assert(ret);
+			std::cout << "deallocate o" <<std::endl;
+			s.deallocate(o);
+			std::cout << "deallocate o1" <<std::endl;
+			s.deallocate(o1);
+			std::cout << "deallocate o2" <<std::endl;
+			s.deallocate(o2);
+
+			e->reset(&s);
+			ret = e->find_loop(&s, e, true);
+			assert(ret);
+			ret = e->check_live(&s);
+			assert(!ret);
+#ifdef ZVM_ENTRY_DEBUG
+			assert(cnt < entry::s_ent_cnt);
+#endif
+			s32 n = gc::try_collect(-1);
+			assert(n > 0);
+			std::cout << "deallocate o3" <<std::endl;
+			s.deallocate(o3);
+			n = gc::try_collect(-1);
+			assert(n > 0);
+#ifdef ZVM_ENTRY_DEBUG
+			assert(cnt == entry::s_ent_cnt);
+#endif
+			return	0;
 	}
 
 	int zvm_class_test(stack& s){
@@ -373,10 +458,11 @@ namespace zvm{
 		c.add_member(m2);
 		c.add_member(m3);
 
-		zvm_class_new_test(s, c);
-		zvm_class_assign_test(s, c);
-		zvm_loop_refence_test(s, c);
+		//zvm_class_new_test(s, c);
+		//zvm_class_assign_test(s, c);
+		//zvm_loop_refence_test(s, c);
 		zvm_gc_test(s, c);
+		zvm_gc_test1(s, c);
 
 		return	0;
 

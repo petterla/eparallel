@@ -61,6 +61,7 @@ namespace zvm{
 		}
 
 		bool try_collect(stack* s){
+			reset(s);
 			if(ref_count() <= 0){
 				clear(s);
 				return	true;
@@ -69,8 +70,6 @@ namespace zvm{
 				&& check_live(s) == false){
 				clear(s);
 				return	true;
-			}else{
-				reset(s);
 			}
 			return	false;
 		}

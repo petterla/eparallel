@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <stddef.h>
+#include <stdio.h>
 
 namespace zvm{
 
@@ -36,7 +37,12 @@ namespace zvm{
 		s64 m_local;
 		s32 m_type;
 	};
-
+#define ZVM_DEBUG
+#ifdef ZVM_DEBUG
+	#define ZVM_DEBUG_PRINT(...)	printf(__VA_ARGS__)
+#else
+	#define ZVM_DEBUG_PRINT(...)     ((void)0)
+#endif
 };
 
 

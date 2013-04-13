@@ -28,6 +28,7 @@ namespace zvm{
 			m_cur = &m_head;
 		}
 		s32 add(entnode* n){
+			ZVM_DEBUG_PRINT("entlist::add:%p\n", n->m_e);
 			m_lock.lock(0);
 			n->m_prev = m_head.m_prev;
 			m_head.m_prev->m_next = n;
@@ -40,6 +41,7 @@ namespace zvm{
 			return	SUCCESS;
 		}
 		s32 del(entnode* n){
+			ZVM_DEBUG_PRINT("entlist::del:%p\n", n->m_e);
 			m_lock.lock(0);
 			if(n == m_cur){
 				m_cur = n->m_next;
@@ -76,6 +78,7 @@ namespace zvm{
 	
 			entnode* n = get();//(1)
 			if(n){
+				ZVM_DEBUG_PRINT("entlist::check_one_node:%p\n", n->m_e);
 				num += n->m_e->try_collect(&g_gc_stack);
 			}
 
@@ -95,40 +98,57 @@ namespace zvm{
 
 	bool gc_type::find_loop(stack* s, entry* e, bool first){
 		bool ret = false;
-		if(!first)
-			++m_loop_cnt;
-
 		//loop path
 		if(m_status != STATUS_NULL){
 			if((entry*)this == e){
-				m_flag = FLAG_LOOP;
-				return	true;
+				ret = true;
+				goto exit;
 			}
-			return	false;
+			ret = false;
+			goto exit;
 		}
 		m_status = STATUS_SIGN;
 		begin(s);
 		for(obj* r = get_refer_obj(s);r;r = get_refer_obj(s)){
-			ret = ret || r->find_loop(s, e, false);
+			//notice, all reference obj should check the loop
+			bool t = r->find_loop(s, e, false);
+			ret = ret || t;
 		}
+		m_status = STATUS_NULL;
+exit:
 		if(ret)
 			m_flag = FLAG_LOOP;
-		m_status = STATUS_NULL;
+		if(!first && m_flag)
+			++m_loop_cnt;
+		ZVM_DEBUG_PRINT("find_loop:%p ,loop_cnt:%d ,ref_cnt:%d "
+			",flag:%d, first:%d, ret:%d\n",
+			this, m_loop_cnt, ref_count(), m_flag, first, ret);
 		return	ret;
 	}
-
+ 
 	bool gc_type::check_live(stack* s){
-		bool ret = true;
+		bool ret = false;
 		if(m_flag != FLAG_LOOP){
-			return	true;
+			ZVM_DEBUG_PRINT("check_live:%p ,loop_cnt:%d ,ref_cnt:%d "
+				",flag:%d, m_flag != FLAG_LOOP, not live\n",
+				this, m_loop_cnt, ref_count(), m_flag);
+			return	false;
 		}
-		if(m_status != STATUS_NULL)
-			return	true;
-		m_status = STATUS_CHECK;
-		if(m_loop_cnt >= ref_count()){
+		if(m_loop_cnt < ref_count()){
+			ZVM_DEBUG_PRINT("check_live:%p ,loop_cnt:%d ,ref_cnt:%d "
+				",flag:%d, m_loop_cnt < ref_count(), live\n",
+				this, m_loop_cnt, ref_count(), m_flag);
+			ret = true;
+			goto exit;
+		}
+		if(m_status != STATUS_NULL){
+			ZVM_DEBUG_PRINT("check_live:%p ,loop_cnt:%d ,ref_cnt:%d "
+				",flag:%d, m_status != STATUS_NULL, not live\n",
+				this, m_loop_cnt, ref_count(), m_flag);
 			ret = false;
 			goto exit;
 		}
+		m_status = STATUS_CHECK;
 
 		begin(s);
 		for(obj* r = get_refer_obj(s);r;r = get_refer_obj(s)){
