@@ -84,7 +84,7 @@ namespace zvm{
 		}
 
 		virtual bool check_live(stack* s){
-			return	true;
+			return	false;
 		}
 
 		//check if loop reference
@@ -218,7 +218,7 @@ namespace zvm{
 			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 			if(m_ent)
 				return	m_ent->find_loop(s, e, fisrt);
-			return	true;
+			return	false;
 		}
 
 		bool check_live(stack* s){
@@ -226,7 +226,7 @@ namespace zvm{
 			auto_simple_unlock ul(m_lock, (s32)(s64)s);
 			if(m_ent)
 				return	m_ent->check_live(s);
-			return	true;
+			return	false;
 		}
 
 		bool reset(stack* s){

@@ -184,6 +184,7 @@ namespace zvm{
 		m_members(members),
 		m_cursor(0)
 	{
+		ZVM_DEBUG_PRINT("user_type::user_type:%p\n", this);
 		memset(members, 0, member_cnt * sizeof(s64));
 	}
 
@@ -385,6 +386,7 @@ namespace zvm{
 	}
 
 	s32	user_type::clear(stack* s){
+		ZVM_DEBUG_PRINT("user_type::clear:%p\n", this);
 		//loop reference
 		if(status() != STATUS_NULL){
 			status() = STATUS_NULL;
