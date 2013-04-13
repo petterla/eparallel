@@ -61,7 +61,7 @@ namespace zvm{
 		}
 
 		bool try_collect(stack* s){
-			reset(s);
+			reset(s, true);
 			if(ref_count() <= 0){
 				clear(s);
 				return	true;
@@ -87,7 +87,7 @@ namespace zvm{
 
 		virtual bool check_live(stack* s);
 
-		virtual bool reset(stack* s);
+		virtual bool reset(stack* s, bool force);
 
 
 		//get first refer obj

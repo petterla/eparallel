@@ -138,15 +138,13 @@ exit:
 			ZVM_DEBUG_PRINT("check_live:%p ,loop_cnt:%d ,ref_cnt:%d "
 				",flag:%d, m_loop_cnt < ref_count(), live\n",
 				this, m_loop_cnt, ref_count(), m_flag);
-			ret = true;
-			goto exit;
+			return true;
 		}
 		if(m_status == STATUS_CHECK){
 			ZVM_DEBUG_PRINT("check_live:%p ,loop_cnt:%d ,ref_cnt:%d "
 				",flag:%d, m_status == STATUS_CHECK, not live\n",
 				this, m_loop_cnt, ref_count(), m_flag);
-			ret = false;
-			goto exit;
+			return false;
 		}
 		m_status = STATUS_CHECK;
 
@@ -154,11 +152,10 @@ exit:
 		for(obj* r = get_refer_obj(s);r;r = get_refer_obj(s)){
 			ret = r->check_live(s);
 			if(ret){
-				goto exit;
+				break;
 			}
 		}
 		m_status = STATUS_NULL;
-exit:
 		return	ret;
 	}
 
