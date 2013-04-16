@@ -5,12 +5,11 @@
 #################################################################
 
 ROOT = .
-BINNAME = eparallel.a
+BINNAME = libbe.a 
 
 ep_inc = $(ROOT)
 ep_src = $(ROOT)
-be_inc = ../be
-be_src = ../be
+
 
 obj = $(ROOT)/obj
 dbgobj = $(ROOT)/dbgobj
@@ -26,20 +25,18 @@ solib = $(ROOT)/bin
 
 CC = g++ 
 DEFS = -D_DEBUG
-IFLAGS = -I$(ep_inc) -I$(be_inc) 
-CFLAGS = -Wall $(IFLAGS) 
+IFLAGS = 
+CFLAGS = -Wall $(IFLAGS1) 
 APPLIBS = 
-SYSLIBS = -lpthread ../be/bin/libbe.a
+SYSLIBS = -lpthread
 LFLAGS = -L/usr/lib64 -L/usr/local/lib64 -L/usr/lib -L/usr/local/lib 
 
 ifeq ($(MAKECMDGOALS), so)
   CFLAGS = -fPIC -DUNIX $(IFLAGS)
-  LIBS = $(SYSLIBS)
 endif
 
 ifeq ($(MAKECMDGOALS), debug)
   CFLAGS = -g -Wall -DUNIX $(DEFS) $(IFLAGS)
-  LIBS = $(SYSLIBS)
 endif
 
 
@@ -50,7 +47,7 @@ AR = ar
 ARFLAGS = rv
 RANLIB = ranlib
 RM = /bin/rm -f
-COMPILE.c = $(CC) $(CFLAGS) -c
+COMPILE.c = $(CC) $(CFLAGS) -c -g
 LINK = $(CC) $(CFLAGS) $(LFLAGS) -o
 SOLINK = $(CC) $(CFLAGS) $(LFLAGS) -shared -o
 
@@ -91,4 +88,4 @@ $(bin): $(objs)
 	$(RANLIB) $(RANLIBFLAGS) $@
 
 $(obj)/%.o: $(ep_src)/%.cpp 
-	$(COMPILE.c) $< -o $@ 
+	$(COMPILE.c) $< -o $@

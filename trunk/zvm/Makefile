@@ -10,6 +10,8 @@ BINNAME = zvm.dbg
 ep_inc = $(ROOT)
 ep_src = $(ROOT)
 
+be_inc = ../be
+be_src = ../be
 
 obj = $(ROOT)/obj
 dbgobj = $(ROOT)/dbgobj
@@ -25,20 +27,12 @@ solib = $(ROOT)/bin
 
 CC = g++ 
 DEFS = -D_DEBUG
-IFLAGS = -I$(ep_inc) -I/usr/src/kernels/2.6.33.3-85.fc13.i686/arch/x86/include -I/usr/src/kernels/2.6.33.3-85.fc13.i686/include
+IFLAGS = -I$(ep_inc) -I$(be_inc)
 CFLAGS = -Wall $(IFLAGS1) 
 APPLIBS = 
-SYSLIBS = -lpthread
+SYSLIBS = -lpthread ../be/bin/libbe.a 
 LFLAGS = -L/usr/lib64 -L/usr/local/lib64 -L/usr/lib -L/usr/local/lib 
-
-ifeq ($(MAKECMDGOALS), so)
-  CFLAGS = -fPIC -DUNIX $(IFLAGS)
-endif
-
-ifeq ($(MAKECMDGOALS), debug)
-  CFLAGS = -g -Wall -DUNIX $(DEFS) $(IFLAGS)
-  LIBS = $(SYSLIBS)
-endif
+CFLAGS = -g -Wall -DUNIX $(DEFS) $(IFLAGS) 
 
 
 #################################################################
@@ -85,6 +79,6 @@ $(sobin): $(objs)
 	$(SOLINK) $@ $? 
 
 $(bin): $(objs) 
-	$(CC) -o $(bin) $(objs)
+	$(CC) -o $(bin) $(objs) $(SYSLIBS)
 $(obj)/%.o: $(ep_src)/%.cpp 
-	$(COMPILE.c) $< -o $@
+	$(COMPILE.c) $< -o $@ $(CCFLAGS)
