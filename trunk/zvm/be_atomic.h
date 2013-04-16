@@ -47,6 +47,11 @@ void*	atomic_exchange_ptr			(volatile	void**	dst,
 											void*	val);
 
 s32		get_cpu_core();
+
+s32		atomic_test();
+
 };
+
+
 
 #endif/*BE_ATOMIC_H*/
