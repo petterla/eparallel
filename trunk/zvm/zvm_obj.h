@@ -43,7 +43,7 @@ namespace zvm{
 		}
 
 		virtual	entry* reference(stack* s){
-			be::atomic_increament32(&m_ref_cnt);
+			be::atomic_increment32(&m_ref_cnt);
 			return	this;
 		}
 
@@ -67,7 +67,7 @@ namespace zvm{
 		}
 
 		virtual	s32 recycle(stack* s){
-			be::s32 c = be::atomic_decreament32(&m_ref_cnt);
+			be::s32 c = be::atomic_decrement32(&m_ref_cnt);
 			if(c <= 0){
 				return	clear(s);
 			}
@@ -106,11 +106,11 @@ namespace zvm{
 		}
 
 		s32 inc_ref(){
-			return	be::atomic_increament32(&m_ref_cnt);
+			return	be::atomic_increment32(&m_ref_cnt);
 		}
 
 		s32 dec_ref(){
-			return	be::atomic_decreament32(&m_ref_cnt);
+			return	be::atomic_decrement32(&m_ref_cnt);
 		}
 
 	private:

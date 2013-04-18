@@ -19,9 +19,14 @@
 #include "be_auto_ptr.h"
 
 namespace	be{
+
+#ifdef _WIN32
+
 #pragma warning(push) 
 
 #pragma warning(disable:4181)
+
+#endif
 
 	template<class	T,	class ALLOC	=	alloc> 
 	class vector
@@ -30,12 +35,12 @@ namespace	be{
 		template<class NODE>
 		class	vector_iterator{
 		public:
-			typedef	random_access_iterator_tag		iterator_category;
-			typedef ptrdiff_t						difference_type;
-			typedef size_t							size_type;
-			typedef	typename	NODE				value_type;
-			typedef	value_type&						reference;
-			typedef	value_type*						pointer;
+			typedef	random_access_iterator_tag	iterator_category;
+			typedef ptrdiff_t			difference_type;
+			typedef size_t				size_type;
+			typedef	NODE				value_type;
+			typedef	value_type&			reference;
+			typedef	value_type*			pointer;
 
 			vector_iterator(NODE*	nod	=	0):m_cur(nod){
 			}
@@ -259,14 +264,12 @@ namespace	be{
 		iterator insert(iterator pos,size_type	sz, const T& x)
 		{
 
-			typedef	array_auto_ptr<T,	allocator<T,	ALLOC>	>	auto_ptr;
-			auto_ptr						ptr(0,	0);
-			node_type*						nod		=	pos.m_cur;
-			node_type*						head	=	m_head;
-			iterator::difference_type		distan	=	be_distance(m_head,	pos.m_cur);
-			iterator::difference_type		i		=	0;
-			iterator::difference_type		hdist	=	0;
-			iterator::difference_type		tdist	=	0;
+			typedef	array_auto_ptr<T, allocator<T, ALLOC> >	auto_ptr;
+			auto_ptr		ptr(0,	0);
+			node_type*		head	=	m_head;
+			typename iterator::difference_type	distan	=	be_distance(m_head,	pos.m_cur);
+			typename iterator::difference_type	hdist	=	0;
+			typename iterator::difference_type	tdist	=	0;
 
 			assert(*(ptrdiff_t*)&distan	>=	0	&&	*(ptrdiff_t*)&sz	>=	0);
 			if(m_size	+	sz	>	m_capacity){
@@ -335,14 +338,12 @@ namespace	be{
 			iterator	insert(iterator pos,	ForwardItor	first,	ForwardItor	last)
 		{
 			typedef	array_auto_ptr<T,	allocator<T,	ALLOC>	>	auto_ptr;
-			auto_ptr						ptr(0,	0);
-			node_type*						nod		=	pos.m_cur;
-			node_type*						head	=	m_head;
-			iterator::difference_type		distan	=	be_distance(m_head,	pos.m_cur);
-			iterator::difference_type		sz		=	be_distance(first,	last);
-			iterator::difference_type		i		=	0;
-			iterator::difference_type		hdist	=	0;
-			iterator::difference_type		tdist	=	0;
+			auto_ptr				ptr(0,	0);
+			node_type*				head	=	m_head;
+			typename iterator::difference_type	distan	=	be_distance(m_head,	pos.m_cur);
+			typename iterator::difference_type	sz	=	be_distance(first,	last);
+			typename iterator::difference_type	hdist	=	0;
+			typename iterator::difference_type	tdist	=	0;
 
 			assert(*(ptrdiff_t*)&distan	>=	0	&&	*(ptrdiff_t*)&sz	>=	0);
 			if(m_size	+	sz	>	m_capacity){
@@ -403,9 +404,8 @@ namespace	be{
 
 		iterator	erase(iterator first, 	iterator last)
 		{
-			iterator::difference_type	distan	=	be_distance(m_head,	first.m_cur);
-			iterator::difference_type	sz		=	be_distance(first,		last);
-			iterator::difference_type	i		=	distan;
+			typename iterator::difference_type	distan	=	be_distance(m_head,	first.m_cur);
+			typename iterator::difference_type	sz	=	be_distance(first,		last);
 
 			assert(*(ptrdiff_t*)&distan	>=	0	&&	*(ptrdiff_t*)&sz	>=	0);
 			if(m_size){
@@ -486,10 +486,13 @@ namespace	be{
 	private:
 		node_type*	m_buf;
 		node_type*	m_head;
-		size_type	m_capacity;
 		size_type	m_size;
+		size_type	m_capacity;
 	};
+
+#ifdef _WIN32
 #pragma warning(pop) 
+#endif
 
 };
 #endif/*BE_VECTOR1_H*/

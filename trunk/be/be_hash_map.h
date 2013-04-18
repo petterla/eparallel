@@ -117,12 +117,12 @@ namespace	be{
 		};
 
 		struct _Hashtable_const_iterator {		
-			typedef forward_iterator_tag					iterator_category;
-			typedef typename	const	node::data_type		value_type;
-			typedef ptrdiff_t								difference_type;
-			typedef typename	node::size_type				size_type;
-			typedef typename	const	node::data_type&	reference;
-			typedef typename	const	node::data_type*	pointer;
+			typedef forward_iterator_tag			iterator_category;
+			typedef const typename	node::data_type		value_type;
+			typedef ptrdiff_t				difference_type;
+			typedef typename	node::size_type		size_type;
+			typedef const typename	node::data_type&	reference;
+			typedef const typename	node::data_type*	pointer;
 
 
 
@@ -393,7 +393,7 @@ namespace	be{
 			if(!m_size)		return	iterator(0,this);
 			size_type	hs	=	m_hash(key);
 			size_type	pos	=	hs	%	m_msxsize;
-			node*		prev=	0;	
+
 			for(node*	tmp	=	m_buck[pos];	tmp;)
 			{
 				node*	next=	tmp->next;
@@ -534,10 +534,11 @@ namespace	be{
 
 	private:
 		typedef		node**	buck;
-		buck				m_buck;
+
 		mutable	hasher		m_hash;
 		mutable	key_equal	m_equal;
 		node_cache			m_cache;
+		buck				m_buck;
 		size_type			m_size;
 		size_type			m_msxsize;
 

@@ -127,7 +127,7 @@ namespace	be{
 	template<class ITOR>
 	inline	typename	ITOR::difference_type	distance__(ITOR	l,	ITOR	r,	input_iterator_tag)
 	{
-		ITOR::difference_type	ret	=	0;
+		typename ITOR::difference_type	ret	=	0;
 		for (; l != r; ++l)
 			++ret;
 		return	ret;
@@ -136,7 +136,7 @@ namespace	be{
 	template<class ITOR>
 	inline	typename	ITOR::difference_type	distance__(ITOR	l,	ITOR	r,	forward_iterator_tag)
 	{
-		ITOR::difference_type	ret	=	0;
+		typename ITOR::difference_type	ret	=	0;
 		for (; l != r; ++l)
 			++ret;
 		return	ret;
@@ -145,7 +145,7 @@ namespace	be{
 	template<class ITOR>
 	inline	typename	ITOR::difference_type	distance__(ITOR	l,	ITOR	r,	bidirectional_iterator_tag)
 	{
-		ITOR::difference_type	ret	=	0;
+		typename ITOR::difference_type	ret	=	0;
 		for (; l != r; ++l)
 			++ret;
 		return	ret;
@@ -161,7 +161,7 @@ namespace	be{
 	inline	typename	ITOR::difference_type	be_distance(ITOR	l,	ITOR	r)
 	{
 
-		return	distance__(l,	r,	typename	itor_catg<ITOR>::iterator_category());
+		return	distance__(l,	r,	typename itor_catg<ITOR>::iterator_category());
 	};
 
 	template<class ITOR>
@@ -174,7 +174,7 @@ namespace	be{
 	template<class T>
 	inline	void	be_copy(T*	dst,	size_t	sz,	const	T*	src)
 	{
-		copy_pod(dst,	sz,	src,	is_pod<T>::value_type());
+		copy_pod(dst,	sz,	src,	typename is_pod<T>::value_type());
 	}
 	template<class T>
 	inline	void	copy_pod(T*	dst,	size_t	sz,	const	T*	src,	true_type)
@@ -212,7 +212,7 @@ namespace	be{
 	template<class T>
 		inline	void	be_copy_backward(T*	dst,	size_t	sz,	const	T*	src)
 	{
-		copy_pod_backward(dst,	sz,	src,	is_pod<T>::value_type());
+		copy_pod_backward(dst,	sz,	src, typename is_pod<T>::value_type());
 	}
 	template<class T>
 		inline	void	copy_pod_backward(T*	dst,	size_t	sz,	const	T*	src,	true_type)
@@ -242,7 +242,7 @@ namespace	be{
 	template<class T>
 	inline	void	destory(T*	dst,	size_t	sz)
 	{
-		destory_pod(dst,	sz,	is_pod<T>::value_type());
+		destory_pod(dst,	sz,	typename is_pod<T>::value_type());
 	}
 
 	template<class	T>
@@ -261,7 +261,7 @@ namespace	be{
 	template<class T>
 		inline	void	destory(T*	fst,	T*	lst)
 	{
-		destory_pod(fst,	lst,	is_pod<T>::value_type());
+		destory_pod(fst,	lst,	typename is_pod<T>::value_type());
 	}
 
 	template<class	T>

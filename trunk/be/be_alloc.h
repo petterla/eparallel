@@ -29,11 +29,12 @@
 #define ALLOC_DEBUG
 #endif/*DEBUG*/
 
+#ifdef _WIN32
 #pragma warning(push) 
 
 #pragma warning(disable:4311)
 #pragma warning(disable:4312)
-
+#endif
 
 namespace	be{
 
@@ -113,7 +114,7 @@ namespace	be{
 			VOLATILE_	head_node	oldhead;
 			do{
 #ifdef ALLOC_DEBUG
-				atomic_increament32(&loop);
+				atomic_increment32(&loop);
 #endif/*ALLOC_DEBUG*/
 
 				oldhead =	*(VOLATILE_	head_node*)&freelist; //note2
@@ -166,8 +167,8 @@ namespace	be{
 				*(long	long*)&oldhead)	!=	*(long	long*)&oldhead);//note5
 
 #ifdef	ALLOC_DEBUG
-			atomic_increament32(&used);
-			atomic_decreament32(&left);
+			atomic_increment32(&used);
+			atomic_decrement32(&left);
 			fill_flag(target);
 			return	(char*)target	+	sizeof(unsigned	int);
 #else
@@ -195,7 +196,7 @@ namespace	be{
 				!=	*(long	long*)&oldhead);
 
 #ifdef ALLOC_DEBUG
-			atomic_increament32(&left);
+			atomic_increment32(&left);
 #endif/*ALLOC_DEBUG*/
 
 		}   
@@ -318,10 +319,10 @@ namespace	be{
 			bucket*	buck	=	NULL;
 
 			while(1){
-				i	=	(u32)atomic_increament32(&index);
+				i	=	(u32)atomic_increment32(&index);
 				++j;
 #ifdef ALLOC_DEBUG
-				//atomic_increament32(&loop);
+				//atomic_increment32(&loop);
 #endif/*ALLOC_DEBUG*/	
 				i	%=	bucketnum;
 				assert(i<bucketnum	&&	i	>=	0);
@@ -334,7 +335,7 @@ namespace	be{
 				++i;
 
 			}
-			//atomic_increament32(&index);
+			//atomic_increment32(&index);
 			//atomic_add32(&index, j);
 			return	buck;
 		}
@@ -371,7 +372,7 @@ namespace	be{
 			s32			newmagic	=	0;
 			u32			oldidx		=	0;
 			bucket*		oldbuck		=	NULL;
-			atomic_increament32(&count);
+			atomic_increment32(&count);
 			newmagic	=	(count	<<	bucknumbits)	+	idx;
 			do{
 
@@ -379,7 +380,7 @@ namespace	be{
 
 				oldbuck	=	(bucket*)get_old_bucket(oldidx);
 #ifdef ALLOC_DEBUG
-				atomic_increament32(&loop);
+				atomic_increment32(&loop);
 #endif/*ALLOC_DEBUG*/
 				oldhead	=	oldbuck->head;
 				if(!oldhead){
@@ -425,8 +426,8 @@ namespace	be{
 
 			oldbuck->used	=	0;
 #ifdef	ALLOC_DEBUG
-			atomic_increament32(&used);
-			atomic_decreament32(&left);
+			atomic_increment32(&used);
+			atomic_decrement32(&left);
 			fill_flag(target);
 			assert((u32)target	!=	(u32)this);
 			return	(char*)target	+	sizeof(unsigned	int);
@@ -438,7 +439,7 @@ namespace	be{
 		void	deallocate	(void*	pv)
 		{
 			if(!pv)		return;
-			atomic_increament32(&count);
+			atomic_increment32(&count);
 #ifdef	ALLOC_DEBUG
 			assert(check_flag(pv));
 			pv	=	(char*)pv	-	sizeof(unsigned	int);
@@ -464,7 +465,7 @@ namespace	be{
 				!=	oldmagic);
 			oldbuck->used	=	0;
 #ifdef ALLOC_DEBUG
-			atomic_increament32(&left);
+			atomic_increment32(&left);
 #endif/*ALLOC_DEBUG*/
 		}   
 
@@ -591,24 +592,24 @@ namespace	be{
 			u32		i	=	idex;
 			register	bool	ret	=	false;
 #ifdef ALLOC_DEBUG
-			atomic_increament32(&loop);
+			atomic_increment32(&loop);
 #endif/*ALLOC_DEBUG*/
 			for(;i	<	groupnum	&&	
 					!(ret=	heads[i].try_lock());	++i){
 #ifdef ALLOC_DEBUG
-				atomic_increament32(&loop);
+				atomic_increment32(&loop);
 #endif/*ALLOC_DEBUG*/
 			}
 			if(i	<	groupnum){
 				return	&heads[i];
 			}
 #ifdef ALLOC_DEBUG
-			atomic_increament32(&loop);
+			atomic_increment32(&loop);
 #endif/*ALLOC_DEBUG*/
 			for(i	=	0;i	<	idex	&&	
 				!(ret=	heads[i].try_lock());	++i){
 #ifdef ALLOC_DEBUG
-					atomic_increament32(&loop);
+					atomic_increment32(&loop);
 #endif/*ALLOC_DEBUG*/
 			}
 			if(i	<	idex){
@@ -622,13 +623,13 @@ namespace	be{
 			register	bool	ret	=	false;
 
 #ifdef ALLOC_DEBUG
-			atomic_increament32(&loop);
+			atomic_increment32(&loop);
 #endif/*ALLOC_DEBUG*/
 
 			for(;i	<	groupnum	&&	
 				!(ret=	heads[i].try_lock());	++i){
 #ifdef ALLOC_DEBUG
-					atomic_increament32(&loop);
+					atomic_increment32(&loop);
 #endif/*ALLOC_DEBUG*/
 			}
 			if(i	<	groupnum){
@@ -683,14 +684,14 @@ namespace	be{
 
 			}
 			head->unlock();
-			atomic_increament32(&index);
+			atomic_increment32(&index);
 			if(buf){
 				target	=	newbuf_head;
 				add_mem(buf);
 			}
 #ifdef	ALLOC_DEBUG
-			atomic_increament32(&used);
-			atomic_decreament32(&left);
+			atomic_increment32(&used);
+			atomic_decrement32(&left);
 			fill_flag(target);
 			return	(char*)target	+	sizeof(unsigned	int);
 
@@ -719,7 +720,7 @@ namespace	be{
 			head->head	=	(node*)pv;
 			head->unlock();
 #ifdef ALLOC_DEBUG
-			atomic_increament32(&left);
+			atomic_increment32(&left);
 #endif/*ALLOC_DEBUG*/
 		}
 
@@ -1124,6 +1125,8 @@ namespace	be{
 	mem_pool	t_pool<T>::m_pool	=	mem_pool(sizeof(T));	
 };
 
+#ifdef _WIN32
 #pragma warning(pop)
+#endif
 
 #endif/*BE_ALLOC_H*/

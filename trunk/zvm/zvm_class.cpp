@@ -12,7 +12,7 @@ namespace zvm{
 	}
 
 	s32 classdef::recycle(stack* s){
-		be::atomic_decreament32((volatile be::s32*)&m_ref_cnt);
+		be::atomic_decrement32((volatile be::s32*)&m_ref_cnt);
 		if(m_ref_cnt < 0){
 			delete	this;
 		}

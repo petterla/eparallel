@@ -268,9 +268,10 @@ namespace	be{
 		}
 	protected:
 	private:
-		node_cache	m_cache;
+
 		node_type*	m_head;
 		size_type	m_size;
+		node_cache	m_cache;
 	};
 
 };
