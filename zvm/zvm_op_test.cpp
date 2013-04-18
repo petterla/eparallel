@@ -13,9 +13,9 @@ namespace zvm{
 		stack	s;
 		s.push_frame();
 		
-		//zvm_push_pop_test(s);
-		//zvm_int_op_test(s);
-		//zvm_function_test(s);
+		zvm_push_pop_test(s);
+		zvm_int_op_test(s);
+		zvm_function_test(s);
 		zvm_class_test(s);
 
 		return	0;
@@ -458,9 +458,9 @@ namespace zvm{
 		c.add_member(m2);
 		c.add_member(m3);
 
-		//zvm_class_new_test(s, c);
-		//zvm_class_assign_test(s, c);
-		//zvm_loop_refence_test(s, c);
+		zvm_class_new_test(s, c);
+		zvm_class_assign_test(s, c);
+		zvm_loop_refence_test(s, c);
 		zvm_gc_test(s, c);
 		zvm_gc_test1(s, c);
 

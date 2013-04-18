@@ -11,11 +11,11 @@ namespace	be{
 	public:
 		alloc_initor()
 		{
-			for(long	i	=	0;	i	<	alloc::BUCK_NUM;	++i)
+			for(size_t	i	=	0;	i	<	alloc::BUCK_NUM;	++i)
 			{
-				long	sz	=	alloc::MIN_SIZE	*	(i	+	1);
-				long	cap	=	(long)(mem_pool::EXPANSION_SIZE	/	sqrt(double(i+1)));
-				long	exp	=	cap	?	cap	:	1;
+				//size_t	sz	=	alloc::MIN_SIZE	*	(i	+	1);
+				//size_t	cap	=	(long)(mem_pool::EXPANSION_SIZE	/	sqrt(double(i+1)));
+				//size_t	exp	=	cap	?	cap	:	1;
 				//alloc::m_pool[i]	=	new	mem_pool(sz,	cap,	exp);
 			}
 			return;

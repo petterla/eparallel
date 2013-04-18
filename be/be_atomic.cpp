@@ -88,7 +88,7 @@ namespace	be{
 #endif
     }
 
-    s32		atomic_increament32	(volatile	s32*	dst)
+    s32		atomic_increment32	(volatile	s32*	dst)
     {
 #ifdef	_WIN32
         return	InterlockedIncrement(dst);
@@ -98,7 +98,7 @@ namespace	be{
 #endif
     }
 
-    s32		atomic_decreament32	(volatile	s32*	dst)
+    s32		atomic_decrement32	(volatile	s32*	dst)
     {
 #ifdef	_WIN32
         return	InterlockedDecrement(dst);
@@ -109,7 +109,7 @@ namespace	be{
     }
 
 
-    s64		atomic_increament64	(volatile	s64*	dst)
+    s64		atomic_increment64	(volatile	s64*	dst)
     {
 #ifdef	_WIN32
 #endif/*_WIN32*/
@@ -119,7 +119,7 @@ namespace	be{
 		return	0;
     }
 
-    s64		atomic_decreament64	(volatile	s64*	dst)
+    s64		atomic_decrement64	(volatile	s64*	dst)
     {
 #ifdef	_WIN32
         return	0;
@@ -169,9 +169,9 @@ namespace	be{
 
 	assert(0 == atomic_compare_exchange32(&a, 1, 0));
 	assert(1 == a);
-	assert(2 == atomic_increament32(&a));
+	assert(2 == atomic_increment32(&a));
 	assert(2 == a);
-	assert(1 == atomic_decreament32(&a));
+	assert(1 == atomic_decrement32(&a));
 	assert(1 == a);	
 	return	0;
     }

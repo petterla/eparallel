@@ -10,19 +10,19 @@ namespace	be{
 	class	hash_list{
 	public:
 
-		typedef	list<KEY,	ALLOC>									list;
-		typedef	typename	list::iterator							hval;
-		typedef	hash_map<KEY, hval,	HASHFUN,	EUQAL,	ALLOC>		map;
+		typedef	list<KEY,	ALLOC>				list_t;
+		typedef	typename	list_t::iterator	   	hval;
+		typedef	hash_map<KEY, hval, HASHFUN, EUQAL, ALLOC>	map;
 
 		template<class VT>
 		class hliterator
 		{
 		public:
-			typedef bidirectional_iterator_tag			iterator_category;
-			typedef VT									value_type;
+			typedef bidirectional_iterator_tag		iterator_category;
+			typedef VT					value_type;
 			typedef typename	hval::difference_type	difference_type;
-			typedef value_type*							pointer;
-			typedef value_type&							reference;
+			typedef value_type*				pointer;
+			typedef value_type&				reference;
 			hliterator(const hval& hv):m_itor(hv){}
 
 			hliterator&	operator++(){
@@ -173,8 +173,8 @@ namespace	be{
 		}
 	private:
 
-		list	m_list;
-		map		m_map;
+		list_t	m_list;
+		map	m_map;
 	};
 };
 
