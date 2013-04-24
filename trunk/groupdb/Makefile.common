@@ -1,0 +1,14 @@
+
+CC = /usr/bin/gcc 
+AR = /usr/bin/ar
+RANLIB = /usr/bin/ranlib
+SYSLFLAG = -L/usr/lib
+SYSINC = -I/usr/include
+CCPARA = -funsigned-char
+
+ARFLAGS = rv
+RM = /bin/rm -f
+COMPILE.c = $(CC) $(CCPARA) $(CFLAGS) $(SYSINC) -c
+LINK = $(CC) $(CCPARA) $(CFLAGS) $(SYSLFLAG) $(LFLAGS) -o
+SOLINK = $(CC) $(CCPARA) $(CFLAGS) $(SYSLFLAG) $(LFLAGS) -shared -o
+
