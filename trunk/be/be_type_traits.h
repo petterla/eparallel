@@ -166,3 +166,4 @@ namespace	be{
 
 
 #endif/*BE_TYPE_TRAITS_H*/
+

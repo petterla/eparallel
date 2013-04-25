@@ -48,3 +48,4 @@ namespace zvm{
 }
 
 #endif/*ZVM_EXCEPTION_H*/
+

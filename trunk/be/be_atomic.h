@@ -55,3 +55,4 @@ s32		atomic_test();
 
 
 #endif/*BE_ATOMIC_H*/
+

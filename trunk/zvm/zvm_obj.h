@@ -299,3 +299,4 @@ namespace zvm{
 }
 
 #endif/*ZVM_OBJ_H*/
+

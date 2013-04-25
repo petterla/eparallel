@@ -47,3 +47,4 @@ struct hashfun<T*>{
 
 };
 #endif
+
