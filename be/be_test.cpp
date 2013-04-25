@@ -8,7 +8,7 @@
 #include "be_atomic.h"
 #include "be_alloc.h"
 #include "be_hash_map.h"
-#include <hash_map>
+#include <ext/hash_map>
 #include <vector>
 #include "be_hash_list.h"
 #include "be_list.h"

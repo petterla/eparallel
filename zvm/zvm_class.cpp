@@ -31,7 +31,7 @@ namespace zvm{
 
 	s32 classdef::import_class(classdef* c){
 		m_classes.push_back(c);
-		return	NULL;
+		return	SUCCESS;
 	}
 	classdef* classdef::get_class(u32 idx){
 		if(idx < m_classes.size()){

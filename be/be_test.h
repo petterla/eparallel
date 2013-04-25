@@ -18,3 +18,4 @@ int		lockfree_test	(int	threadnum);
 int		cpoy_test		();
 
 #endif/*BE_TEST_H*/
+

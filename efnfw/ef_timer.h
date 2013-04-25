@@ -52,7 +52,7 @@ namespace	ef{
 
 		time_tv timouttime = time_tv());
 
-		~timer();
+		virtual ~timer();
 
 		virtual	int32	timeout();
 
@@ -89,3 +89,4 @@ namespace	ef{
 };
 
 #endif/*EF_TIMER_H*/
+

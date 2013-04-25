@@ -17,3 +17,4 @@ typedef	double					d64;
 };
 
 #endif/*BE_TYPE_H*/
+

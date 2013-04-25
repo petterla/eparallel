@@ -97,3 +97,4 @@ private:
 
 
 #endif/*BE_AUTO_PTR_H*/
+
