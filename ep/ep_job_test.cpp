@@ -227,7 +227,7 @@ namespace ep{
 
 		job* j = new job(&g_test_tp);
 
-		j->set_auto_destory(true);
+		j->set_auto_destroy(true);
 
 		for(int i = 0; i < 10; ++i){
 

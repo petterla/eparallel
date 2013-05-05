@@ -68,16 +68,13 @@ so: clean $(sobin)
 debug: clean $(bin)
 clean: 
 	$(RM) $(objs)
+	$(RM) $(bin)
 show:
 	@echo $(bin)
 	ls $(objs)
 
 #################################################################
 #  Additional Rules
-
-$(sobin): $(objs) 
-	$(SOLINK) $@ $? 
-
 $(bin): $(objs) 
 	$(CC) -o $(bin) $(objs) $(SYSLIBS)
 $(obj)/%.o: $(ep_src)/%.cpp 

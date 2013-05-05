@@ -1,0 +1,6 @@
+project(elog)
+set(SRC_LIST elog.cpp)
+set(LIBRARY_OUTPUT_PATH lib)
+add_definitions("-Wall -g")
+link_libraries(pthread config)
+add_library(elog ${SRC_LIST})

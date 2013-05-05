@@ -140,7 +140,7 @@ namespace ep{
 
 	}
 
-	job::job(thread_pool* tp, u32 priority, bool autodestory)
+	job::job(thread_pool* tp, u32 priority, bool autodestroy)
 
 		:m_id(0),
 
@@ -156,7 +156,7 @@ namespace ep{
 
 		m_refs(1),
 
-		m_autodestory(autodestory),
+		m_autodestroy(autodestroy),
 
 		m_obj(NULL),
 
@@ -362,7 +362,7 @@ namespace ep{
 
 		be::be_sem_give(&m_semp);
 
-		if(all_finish && m_autodestory){
+		if(all_finish && m_autodestroy){
 
 			recycle();
 

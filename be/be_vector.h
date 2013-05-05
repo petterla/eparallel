@@ -182,7 +182,7 @@ namespace	be{
 		{
 			if(m_capacity	>=	other.size())
 			{
-				destory(m_head,	m_size);
+				destroy(m_head,	m_size);
 				be_copy(m_buf,	other.m_head,	other.m_head	+	m_size);
 				m_head	=	m_buf;
 				m_size	=	other.m_size;
@@ -195,7 +195,7 @@ namespace	be{
 
 		~vector()
 		{
-			destory(m_head,	m_size);
+			destroy(m_head,	m_size);
 			ALLOC::deallocate(m_buf,	m_capacity	*	sizeof(node_type));
 		}
 
@@ -295,7 +295,7 @@ namespace	be{
 						head	=	m_buf	+	(hdist	+	tdist	-	sz)	/	2;	
 						be_copy(head,	m_head,	m_head	+	distan);
 						be_copy(head	+	distan	+	sz,	m_head	+	distan,	m_head	+	m_size);
-						destory(head	+	m_size	+	sz,	m_head	+	m_size);
+						destroy(head	+	m_size	+	sz,	m_head	+	m_size);
 						m_head	=	head;
 
 					}else{
@@ -316,7 +316,7 @@ namespace	be{
 					{
 						be_copy_backward(head	+	distan	+	sz,	m_head	+	distan,	m_head	+	m_size);
 						be_copy_backward(head,	m_head,	m_head	+	distan);
-						destory(head,	m_head);
+						destroy(head,	m_head);
 						m_head	=	head;
 					}else{
 						be_copy_backward(m_head	+	distan	+	sz,	m_head	+	distan,	m_head	+	m_size);	
@@ -369,7 +369,7 @@ namespace	be{
 						head	=	m_buf	+	(hdist	+	tdist	-	sz)	/	2;	
 						be_copy(head,	m_head,	m_head	+	distan);
 						be_copy(head	+	distan	+	sz,	m_head	+	distan,	m_head	+	m_size);
-						destory(head	+	m_size	+	sz,	m_head	+	m_size);
+						destroy(head	+	m_size	+	sz,	m_head	+	m_size);
 						m_head	=	head;
 
 					}else{
@@ -390,7 +390,7 @@ namespace	be{
 					{
 						be_copy_backward(head	+	distan	+	sz,	m_head	+	distan,	m_head	+	m_size);
 						be_copy_backward(head,	m_head,	m_head	+	distan);
-						destory(head,	m_head);
+						destroy(head,	m_head);
 						m_head	=	head;
 					}else{
 						be_copy_backward(m_head	+	distan	+	sz,	m_head	+	distan,	m_head	+	m_size);	
@@ -413,11 +413,11 @@ namespace	be{
 				if((long)m_size	-	(distan	+	sz)	<=	(long)distan)
 				{
 					be_copy(m_head	+	distan,	m_head	+	distan	+	sz,	m_head	+	m_size);
-					destory(m_head	+	m_size	-	sz,	sz);
+					destroy(m_head	+	m_size	-	sz,	sz);
 				}else{
 
 					be_copy_backward(m_head	+	sz,	m_head,	m_head	+	distan);
-					destory(m_head,	sz);
+					destroy(m_head,	sz);
 					m_head	+=	sz;
 				}
 			}

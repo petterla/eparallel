@@ -5,7 +5,7 @@
 namespace	be{
 
 template<class	T>
-struct	defaultdestory{
+struct	defaultdestroy{
 	static	void	deallocate(T*	pt){
 		delete	pt;
 	}

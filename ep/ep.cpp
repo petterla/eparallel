@@ -90,7 +90,7 @@ namespace ep{
 
 	}
 
-	s32		parallel::destory_job(u64 jobid){
+	s32		parallel::destroy_job(u64 jobid){
 
 		job* t = 0;
 
