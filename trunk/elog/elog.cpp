@@ -19,7 +19,7 @@ std::string get_str_hour(time_t n){
     t = *(localtime(&n));
     std::stringstream os;
     os << (t.tm_year + 1900) << "_" << t.tm_mon << "_"
-        << t.tm_mday + "_" << t.tm_hour;
+        << t.tm_mday << "_" << t.tm_hour;
     return os.str();    
 }
 
@@ -28,7 +28,7 @@ std::string get_str_minute(time_t n){
     t = *(localtime(&n));
     std::stringstream os;
     os << (t.tm_year + 1900) << "_" << t.tm_mon << "_"
-        << t.tm_mday + "_" << t.tm_hour 
+        << t.tm_mday << "_" << t.tm_hour 
         << "_" << t.tm_min;
     return os.str();    
 }
@@ -38,7 +38,7 @@ std::string get_str_time_and_pid(time_t n){
     t = *(localtime(&n));
     std::stringstream os;
     os << (t.tm_year + 1900) << "-" << t.tm_mon << "-"
-        << t.tm_mday + " " << t.tm_hour 
+        << t.tm_mday << " " << t.tm_hour 
         << ":" << t.tm_min << ":" << t.tm_sec
         << " [PID=" << getpid() << "] ";
     return os.str();    
