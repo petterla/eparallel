@@ -33,7 +33,7 @@ namespace	ep{
 		//when job run,could cancel
 		s32		cancel_job(u64 j);
 
-		s32		destory_job(u64 j);
+		s32		destroy_job(u64 j);
 
 	private:
 

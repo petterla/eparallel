@@ -71,7 +71,7 @@ namespace zvm{
 			return	e;
 		}
 		//do not lock,because if type_gc,it can only 
-		//destory at the gc thread
+		//destroy at the gc thread
 		//so n in (1) is always safe!
 		s32 check_one_node(){
 			s32 num = 0;

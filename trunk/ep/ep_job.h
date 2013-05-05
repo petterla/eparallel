@@ -167,7 +167,7 @@ namespace	ep{
 			
 			u32 priority = PORIORITY_NORMAL,
 			
-			bool autodestory = false);
+			bool autodestroy = false);
 
 		~job();	
 
@@ -227,9 +227,9 @@ namespace	ep{
 
 		}
 
-		s32 set_auto_destory(bool autodestory){
+		s32 set_auto_destroy(bool autodestory){
 
-			m_autodestory = autodestory;
+			m_autodestroy = autodestory;
 
 			return true;
 
@@ -237,7 +237,7 @@ namespace	ep{
 
 		bool auto_destroy(){
 
-			return m_autodestory;
+			return m_autodestroy;
 
 		}
 
@@ -288,8 +288,8 @@ namespace	ep{
 
 		u32 m_refs;
 
-		//auto destory when finish
-		bool m_autodestory;
+		//auto destroy when finish
+		bool m_autodestroy;
 
 		void* m_obj;
 

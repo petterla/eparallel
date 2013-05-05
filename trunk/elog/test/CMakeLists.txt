@@ -1,0 +1,7 @@
+project(elog)
+set(SRC_LIST ../elog.cpp elog_test.cpp)
+include_directories(../)
+set(LIBRARY_OUTPUT_PATH lib)
+add_definitions("-Wall -g")
+link_libraries(pthread config)
+add_executable(elog_test ${SRC_LIST})

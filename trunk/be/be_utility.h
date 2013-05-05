@@ -240,38 +240,38 @@ namespace	be{
 	}
 
 	template<class T>
-	inline	void	destory(T*	dst,	size_t	sz)
+	inline	void	destroy(T*	dst,	size_t	sz)
 	{
-		destory_pod(dst,	sz,	typename is_pod<T>::value_type());
+		destroy_pod(dst,	sz,	typename is_pod<T>::value_type());
 	}
 
 	template<class	T>
-		inline	void	destory_pod(T*	dst,	size_t	sz,	true_type)
+		inline	void	destroy_pod(T*	dst,	size_t	sz,	true_type)
 	{
 		return;
 	}
 
 	template<class	T>
-		inline	void	destory_pod(T*	dst,	size_t	sz,	false_type)
+		inline	void	destroy_pod(T*	dst,	size_t	sz,	false_type)
 	{
 		for(size_t	i	=	0;	i	<	sz;	++i)
 			(dst	+	i)->T::~T();
 	}
 
 	template<class T>
-		inline	void	destory(T*	fst,	T*	lst)
+		inline	void	destroy(T*	fst,	T*	lst)
 	{
-		destory_pod(fst,	lst,	typename is_pod<T>::value_type());
+		destroy_pod(fst,	lst,	typename is_pod<T>::value_type());
 	}
 
 	template<class	T>
-		inline	void	destory_pod(T*	fst,	T*	lst,	true_type)
+		inline	void	destroy_pod(T*	fst,	T*	lst,	true_type)
 	{
 		return;
 	}
 
 	template<class	T>
-		inline	void	destory_pod(T*	fst,	T*	lst,	false_type)
+		inline	void	destroy_pod(T*	fst,	T*	lst,	false_type)
 	{
 		for(T*	i	=	fst;	i	<	lst;	++i)
 			i->T::~T();
