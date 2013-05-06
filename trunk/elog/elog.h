@@ -5,6 +5,7 @@
 #include <map>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <pthread.h> 
 #include <time.h>
 
@@ -21,6 +22,9 @@ namespace elog{
 
     class appender{
     public:
+        appender(){
+        }
+
         virtual ~appender(){
         }
 
@@ -61,6 +65,8 @@ namespace elog{
         }
 
     private:
+        appender(const appender&);
+        appender& operator = (const appender&);
     };
 
     class consoleappender:public appender{
@@ -76,22 +82,22 @@ namespace elog{
             return 0;
         }
 
-	virtual int write_c(char c){
+       	virtual int write_c(char c){
             std::cout << c;
             return 0;
         }
-	
-	virtual int write_i(int i){
+
+        virtual int write_i(int i){
             std::cout << i;
             return 0;
         }
 
-	virtual int write_l(long l){
+        virtual int write_l(long l){
             std::cout << l;
             return 0;
         }
 
-	virtual int write_ll(long long ll){
+        virtual int write_ll(long long ll){
             std::cout << ll;
             return 0;
         }
@@ -101,7 +107,7 @@ namespace elog{
             return 0;
         }
 
-	virtual int write_p(const void* p){
+        virtual int write_p(const void* p){
             std::cout << p;
             return 0;
         }
@@ -144,18 +150,35 @@ namespace elog{
     class logger{
     public:
         logger(appender* p = NULL):m_append(p){
-            if(p)
+            if(p){
                 p->take();
+            }
         }
 
-        logger(const logger& l)
-            :m_append(l.m_append){
+        const logger& swap(const logger& l) const{
+            appender* ap = m_append;
+            m_append = l.m_append;
             l.m_append = NULL;
+            if(ap){
+                ap->give();
+            }
+            return *this;
         }
         
         ~logger(){
-            if(m_append)
+            if(m_append){
                 m_append->give();
+            }
+        }
+
+        logger(const logger& l):
+             m_append(l.m_append)
+        {
+             l.m_append = NULL;
+        }
+
+        const logger& operator = (const logger& l) const{
+             return swap(l);
         }
 
         const logger& operator << (char c) const{
@@ -215,19 +238,29 @@ namespace elog{
 
     class log{
     public:
+        log();
+        ~log();
+        int reload(const std::string& config = "");
         int init(const std::string& config);
         int uninit();
 	logger operator()(const std::string& logname, int level);
     private:
-        int load_appenders();
-        int load_loggers();
         struct log_t{
             int m_level;
             appender* m_appender;
         };
+	typedef std::map<std::string, log_t> loggers;
+        typedef std::map<std::string, appender*> appenders;
+
+        static int load_appenders(const std::string& conf, appenders& apps);
+        static int load_loggers(const std::string& conf, const appenders& apps, loggers& lgs);
+        static int free_appenders(appenders& apps);
+        static int free_loggers(loggers& lgs);
+
+        pthread_mutex_t m_cs;
         std::string m_config;
-	std::map<std::string, log_t> m_logs;
-        std::map<std::string, appender*> m_appends;
+        loggers m_logs;
+        appenders m_appends;
     };
         
 }

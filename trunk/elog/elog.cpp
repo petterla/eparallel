@@ -1,7 +1,6 @@
 #include "elog.h"
 #include "libconfig.h"
 #include <string.h>
-#include <sstream>
 
 namespace elog{
 
@@ -45,26 +44,76 @@ std::string get_str_time_and_pid(time_t n){
 
 }
 
+log::log(){
+    pthread_mutex_init(&m_cs, NULL);
+}
+
+log::~log(){
+    uninit();
+    pthread_mutex_destroy(&m_cs);
+}
 
 int log::init(const std::string& config){
-    m_config = config;
 
     int ret = 0;
-    ret = load_appenders(); 
-    if(ret < 0){
-        std::cout << "log <config:" << config << "> load appenders fail\n";
-        return -1;
-    }
+    
+    pthread_mutex_lock(&m_cs);    
+    do{
+        ret = load_appenders(config, m_appends); 
+        if(ret < 0){
+            std::cout << "log <config:" << config << "> load appenders fail\n";
+            break;
+        }
 
-    ret = load_loggers();
-    if(ret < 0){
-        std::cout << "log <config:" << config << "> load loggers fail\n";
-    }
+        ret = load_loggers(config, m_appends, m_logs);
+        if(ret < 0){
+            std::cout << "log <config:" << config << "> load loggers fail\n";
+        }
+    }while(0);
+    m_config = config;
+    pthread_mutex_unlock(&m_cs);
 
     return ret;
 }
 
-int log::load_appenders(){
+int log::reload(const std::string& config){
+
+    int ret = 0;
+    
+    std::string conf;
+    if(config != ""){
+        conf = config;
+    }else{
+        conf = m_config;
+    }
+    
+    appenders apps;
+    loggers lgs;
+
+    do{
+        ret = load_appenders(conf, apps);
+        if(ret < 0){
+            std::cout << "reload log <config:" << conf << "> load appenders fail\n";
+            break;
+        }
+        ret = load_loggers(conf, apps, lgs);
+        if(ret < 0){
+            std::cout << "reload log <config:" << conf << "> load loggers fail\n";
+            break;
+        }
+        pthread_mutex_lock(&m_cs);
+        apps.swap(m_appends);
+        lgs.swap(m_logs);
+        m_config = conf;
+        pthread_mutex_unlock(&m_cs);
+    }while(0); 
+     
+    free_appenders(apps);
+
+    return ret;
+}
+
+int log::load_appenders(const std::string& conf, appenders& apps){
 
     config_t cfg;
     int ret = 0;
@@ -72,16 +121,16 @@ int log::load_appenders(){
     config_init(&cfg);
     
     do{    
-	ret = config_read_file(&cfg, m_config.c_str());
+	ret = config_read_file(&cfg, conf.c_str());
 	if(ret != CONFIG_TRUE){
-	    std::cout << "log <config:" << m_config << "> read file fail\n"; 
+	    std::cout << "log <config:" << conf << "> read file fail\n"; 
 	    ret = -1;
 	    break;
 	} 
 	   
 	config_setting_t* appends = config_lookup(&cfg, "appenders");
 	if(!appends){
-	    std::cout << "log <config:" << m_config << "> get appenders fail\n"; 
+	    std::cout << "log <config:" << conf << "> get appenders fail\n"; 
 	    ret = -1;
 	    break;
 	}
@@ -92,7 +141,7 @@ int log::load_appenders(){
 
 	    config_setting_t* append = config_setting_get_elem(appends, i);
 	    if(!append){
-		std::cout << "log <config:" << m_config << "> get <appender:"
+		std::cout << "log <config:" << conf << "> get <appender:"
 		    << i << "> fail\n";
 		ret = -1;
 		break;
@@ -101,7 +150,7 @@ int log::load_appenders(){
 	    const char* name = NULL;
 	    config_setting_lookup_string(append, "name", &name);
 	    if(!name){
-		std::cout << "log <config:" << m_config << "> get <appender:" 
+		std::cout << "log <config:" << conf << "> get <appender:" 
 	            << i << "> name fail\n";
 		ret = -1;
 		break; 
@@ -110,7 +159,7 @@ int log::load_appenders(){
 	    const char* type = NULL; 
 	    config_setting_lookup_string(append, "type", &type);
 	    if(!type){
-		std::cout << "log <config:" << m_config << "> get <appender:"
+		std::cout << "log <config:" << conf << "> get <appender:"
 		    << i << "> type fail\n";
 		ret = -1;
 		break;
@@ -123,7 +172,7 @@ int log::load_appenders(){
 		const char* path = NULL;
 		config_setting_lookup_string(append, "path", &path);
 		if(!path){
-		    std::cout << "log <config:" << m_config << "> get <appender:"
+		    std::cout << "log <config:" << conf << "> get <appender:"
 			<< i << "> path fail\n";
 		    ret = -1;
 		    break;
@@ -142,15 +191,15 @@ int log::load_appenders(){
 		    } 
 	        } 
 		fileappender* fp = new fileappender(path, sspn);
-		m_appends[name] = fp;
-		std::cout << "log <config:" << m_config << "> load <appender:"
+		apps[name] = fp;
+		std::cout << "log <config:" << conf << "> load <appender:"
                      << name << "> <type:FileAppender>\n";
 	    }else if(strncasecmp(type, consoleapd, strlen(consoleapd)) == 0){
-	        m_appends[name] = new consoleappender;
-		std::cout << "log <config:" << m_config << "> load <appender:"
+	        apps[name] = new consoleappender;
+		std::cout << "log <config:" << conf << "> load <appender:"
                      << name << "> <type:ConsoleAppender>\n";
 	    }else{
-		std::cout << "log <config:" << m_config << "> unsupport <appender:"
+		std::cout << "log <config:" << conf << "> unsupport <appender:"
                      << name << "> <type:" << type << ">\n";
             }
 	}
@@ -159,7 +208,7 @@ int log::load_appenders(){
     return ret;     
 }
 
-int log::load_loggers(){
+int log::load_loggers(const std::string& conf, const appenders& apps, loggers& logs){
     config_t cfg;
     
     int ret = 0;
@@ -167,16 +216,16 @@ int log::load_loggers(){
     config_init(&cfg);
 
     do{
-        ret = config_read_file(&cfg, m_config.c_str());
+        ret = config_read_file(&cfg, conf.c_str());
         if(ret != CONFIG_TRUE){
-            std::cout << "log <config:" << m_config << "> read file fail\n"; 
+            std::cout << "log <config:" << conf << "> read file fail\n"; 
             ret = -1;
             break;
         } 
    
         config_setting_t* loggers = config_lookup(&cfg, "loggers");
         if(!loggers){
-            std::cout << "log <config:" << m_config << "> get loggers fail\n"; 
+            std::cout << "log <config:" << conf << "> get loggers fail\n"; 
             ret = -1;
             break;
         }
@@ -185,7 +234,7 @@ int log::load_loggers(){
         for(int i = 0; i < count; ++i){
             config_setting_t* logger= config_setting_get_elem(loggers, i);
             if(!logger){
-                std::cout << "log <config:" << m_config << "> get <logger:"
+                std::cout << "log <config:" << conf << "> get <logger:"
                     << i << "> fail\n";
                 ret = -1;
                 break;
@@ -194,7 +243,7 @@ int log::load_loggers(){
             const char* name = NULL;
             config_setting_lookup_string(logger, "name", &name);
             if(!name){
-                std::cout << "log <config:" << m_config << "> get <logger:" 
+                std::cout << "log <config:" << conf << "> get <logger:" 
                     << i << "> name fail\n";
                 ret = -1;
                 break; 
@@ -222,23 +271,23 @@ int log::load_loggers(){
             const char* append= NULL; 
             config_setting_lookup_string(logger, "appender", &append);
             if(!append){
-                std::cout << "log <config:" << m_config << "> get <logger:"
+                std::cout << "log <config:" << conf << "> get <logger:"
                     << i << "> appender fail\n";
                 ret = -1;
                 break;
             } 
             log_t log;
             log.m_level = l;
-            log.m_appender = m_appends[append];
+            log.m_appender = const_cast<appenders&>(apps)[append];
             if(!log.m_appender){
-                std::cout << "log <config:" << m_config << "> get <logger:"
+                std::cout << "log <config:" << conf << "> get <logger:"
                     << i << "> <appender:" << append << "> is null\n"; 
                 ret = -1;
                 break;
             }
-            m_logs[name] = log;
+            logs[name] = log;
             
-            std::cout << "log <config:" << m_config << "> load <logger:"
+            std::cout << "log <config:" << conf << "> load <logger:"
                 << name << "> <appender:" << append << "> <level:"
                 << level << ">\n"; 
         }
@@ -248,14 +297,18 @@ int log::load_loggers(){
 }
 
 logger log::operator()(const std::string& logname, int level){
-    std::map<std::string, log_t>::iterator itor = m_logs.find(logname);
+    logger lg;
+    
+    pthread_mutex_lock(&m_cs);
+    loggers::iterator itor = m_logs.find(logname);
     if(itor != m_logs.end()){
         log_t l = itor->second;
         if(level <= l.m_level)
-            return logger(l.m_appender);
-        return logger();
+            lg = logger(l.m_appender);
     }
-    return logger();
+    pthread_mutex_unlock(&m_cs);
+
+    return lg;
 }
 
 fileappender::fileappender(const std::string& path, int schedu_span)
@@ -265,6 +318,8 @@ fileappender::fileappender(const std::string& path, int schedu_span)
 
 fileappender::~fileappender(){
     pthread_mutex_destroy(&m_cs); 
+    if(m_file.is_open())
+        m_file.close();
 }
 
 int fileappender::take(){
@@ -297,15 +352,29 @@ int fileappender::take(){
 }
 
 int log::uninit(){
-    std::map<std::string, appender*>::iterator itor = m_appends.begin();
-    for(; itor != m_appends.end(); ++itor){
+    pthread_mutex_lock(&m_cs);
+    free_loggers(m_logs);
+    free_appenders(m_appends);
+    pthread_mutex_unlock(&m_cs);
+    return 0;
+}
+
+int log::free_appenders(appenders& apps){
+    appenders::iterator itor = apps.begin();
+    for(; itor != apps.end(); ++itor){
         delete itor->second;
     }
+    apps.clear();
+    return 0;
+}
+
+int log::free_loggers(loggers& lgs){
+    lgs.clear();
     return 0;
 }
 
 int fileappender::give(){
-    m_file << std::endl;
+    m_file << '\n';
     pthread_mutex_unlock(&m_cs);
     return 0;
 }
