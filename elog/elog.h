@@ -3,7 +3,6 @@
 
 #include <string>
 #include <map>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <pthread.h> 
@@ -73,12 +72,10 @@ namespace elog{
     public:
 	virtual int take(){
             //cout time
-            std::cout << get_str_time_and_pid(time(NULL));
             return 0;
         }
 
 	virtual int give(){
-            std::cout << std::endl;
             return 0;
         }
 
@@ -119,6 +116,7 @@ namespace elog{
 
     };
 
+
     class fileappender:public appender{
     public:
         enum{
@@ -126,55 +124,72 @@ namespace elog{
             HOUR = 3600,
             DAY = 3600 * 24,
         };
+        enum{
+            NOCOMPRESS = 0,
+            GZIP = 1,
+        };
 
-        fileappender(const std::string& path, int schedu_span);
+        fileappender(const std::string& path, int schedu_span, 
+                     bool immediately_flush = false, 
+                     int compress_type = 0);
         virtual ~fileappender();
         virtual int take();
         virtual int give();
-       	virtual int write_c(char c);	
-        virtual int write_i(int i);
-        virtual int write_l(long l);
-        virtual int write_ll(long long ll);
-        virtual int write_d(double d);
-        virtual int write_p(void* p);
         virtual int write_s(const std::string& s);
     private:
         pthread_mutex_t m_cs;
         std::string m_path;
         int m_schedu_span;
         time_t m_last_open_time; 
-        std::fstream m_file;
-
+        FILE* m_file;
+        bool m_immediately_flush;
+        int m_compress_type;
+        volatile int m_refcnt;
     };
+
 
     class logger{
     public:
-        logger(appender* p = NULL):m_append(p){
+        logger(appender* p = NULL):m_append(p), m_os(NULL){
             if(p){
                 p->take();
+                m_os = new std::stringstream;
             }
         }
 
         const logger& swap(const logger& l) const{
             appender* ap = m_append;
+            std::stringstream* os = m_os;
             m_append = l.m_append;
+            m_os = l.m_os;
             l.m_append = NULL;
+            l.m_os = NULL;
             if(ap){
                 ap->give();
+            }
+            if(os){
+                delete os;
             }
             return *this;
         }
         
         ~logger(){
             if(m_append){
+                *m_os << '\n';
+                m_append->write_s(m_os->str());
                 m_append->give();
+            }
+            if(m_os){
+                delete m_os;
             }
         }
 
         logger(const logger& l):
-             m_append(l.m_append)
+             m_append(l.m_append),
+             m_os(l.m_os)
         {
              l.m_append = NULL;
+             l.m_os = NULL;
         }
 
         const logger& operator = (const logger& l) const{
@@ -182,58 +197,61 @@ namespace elog{
         }
 
         const logger& operator << (char c) const{
-            if(m_append)
-                m_append->write_c(c);
+            if(m_os)
+                *m_os << c;
             return *this;
         }
 
         const logger& operator << (int i) const{
-            if(m_append)
-                m_append->write_i(i);
+            if(m_os)
+                *m_os << i;
             return *this;
         }
 
         const logger& operator << (long l) const{
-            if(m_append)
-                m_append->write_l(l);
+            if(m_os)
+                *m_os << l;
             return *this;
         }
 
         const logger& operator << (long long ll) const{
-            if(m_append)
-                m_append->write_ll(ll);
+            if(m_os)
+                *m_os << ll;
             return *this;
         }
 
         const logger& operator << (void* p) const{
-            if(m_append)
-                m_append->write_p(p);
+            if(m_os)
+                *m_os << p;
             return *this;
         }
 
         const logger& operator << (double d) const{
-            if(m_append)
-                m_append->write_d(d);
+            if(m_os)
+                *m_os << d;
             return *this;
         }
 
         const logger& operator << (const std::string& s) const{
-            if(m_append)
-                m_append->write_s(s);
+            if(m_os)
+                *m_os << s;
             return *this;
         }
 
     private:
         mutable appender* m_append;
+        mutable std::stringstream* m_os;
     };
     
+
     enum{
         LOG_LEVEL_ALL = 0,
         LOG_LEVEL_DEBUG = 1,
         LOG_LEVEL_TRACE = 2,
-        LOG_LEVEL_WARN = 3,
-        LOG_LEVEL_ERROR = 4,
-        LOG_LEVEL_NOT = 5,
+        LOG_LEVEL_INFO = 3,
+        LOG_LEVEL_WARN = 4,
+        LOG_LEVEL_ERROR = 5,
+        LOG_LEVEL_NOT = 6,
     };
 
     class log{
@@ -249,6 +267,7 @@ namespace elog{
             int m_level;
             appender* m_appender;
         };
+
 	typedef std::map<std::string, log_t> loggers;
         typedef std::map<std::string, appender*> appenders;
 
@@ -262,6 +281,16 @@ namespace elog{
         loggers m_logs;
         appenders m_appends;
     };
+
+    int elog_init(const std::string& config);
+    int elog_uninit();
+    int elog_reload(const std::string& config = "");
+    logger elog_debug(const std::string& logname);
+    logger elog_trace(const std::string& logname);
+    logger elog_info(const std::string& logname);
+    logger elog_warn(const std::string& logname);
+    logger elog_error(const std::string& logname);
+  
         
 }
 
