@@ -8,7 +8,7 @@ std::string get_str_day(time_t n){
     struct tm t;
     t = *(localtime(&n));
     std::stringstream os;
-    os << (t.tm_year + 1900) << "_" << t.tm_mon << "_"
+    os << (t.tm_year + 1900) << "_" << (t.tm_mon + 1) << "_"
         << t.tm_mday;
     return os.str();    
 }
@@ -17,7 +17,7 @@ std::string get_str_hour(time_t n){
     struct tm t;
     t = *(localtime(&n));
     std::stringstream os;
-    os << (t.tm_year + 1900) << "_" << t.tm_mon << "_"
+    os << (t.tm_year + 1900) << "_" << (t.tm_mon + 1) << "_"
         << t.tm_mday << "_" << t.tm_hour;
     return os.str();    
 }
@@ -26,7 +26,7 @@ std::string get_str_minute(time_t n){
     struct tm t;
     t = *(localtime(&n));
     std::stringstream os;
-    os << (t.tm_year + 1900) << "_" << t.tm_mon << "_"
+    os << (t.tm_year + 1900) << "_" << (t.tm_mon + 1) << "_"
         << t.tm_mday << "_" << t.tm_hour 
         << "_" << t.tm_min;
     return os.str();    
@@ -36,7 +36,7 @@ std::string get_str_time_and_pid(time_t n){
     struct tm t;
     t = *(localtime(&n));
     std::stringstream os;
-    os << (t.tm_year + 1900) << "-" << t.tm_mon << "-"
+    os << (t.tm_year + 1900) << "-" << (t.tm_mon + 1) << "-"
         << t.tm_mday << " " << t.tm_hour 
         << ":" << t.tm_min << ":" << t.tm_sec
         << " [PID=" << getpid() << "] ";
@@ -179,7 +179,7 @@ int log::load_appenders(const std::string& conf, appenders& apps){
 		}
  
 		int sspn = fileappender::DAY; 
-		const char* schedu_span = "schedu_span";
+		const char* schedu_span = NULL;
 		config_setting_lookup_string(append, "schedu_span", &schedu_span);
 		if(schedu_span){
 		    if(strncasecmp(schedu_span, "MINUTE", 6) == 0){
@@ -189,8 +189,18 @@ int log::load_appenders(const std::string& conf, appenders& apps){
 		    }else if(strncasecmp(schedu_span, "DAY", 3) == 0){
 			sspn = fileappender::DAY;
 		    } 
-	        } 
-		fileappender* fp = new fileappender(path, sspn);
+	        }
+ 
+                bool immediately_flush = false;
+                const char* immediately_flush_s = NULL;
+                config_setting_lookup_string(append, "immediately_flush", &immediately_flush_s);  
+                if(immediately_flush_s){
+                    if(strncasecmp(immediately_flush_s, "TRUE", 4) == 0){
+                        immediately_flush = true;
+                    }
+                }               
+
+		fileappender* fp = new fileappender(path, sspn, immediately_flush);
 		apps[name] = fp;
 		std::cout << "log <config:" << conf << "> load <appender:"
                      << name << "> <type:FileAppender>\n";
@@ -261,6 +271,8 @@ int log::load_loggers(const std::string& conf, const appenders& apps, loggers& l
                     l = LOG_LEVEL_DEBUG;
                 }else if(strncasecmp(level, "TRACE", 5) == 0){
                     l = LOG_LEVEL_TRACE;
+                }else if(strncasecmp(level, "INFO", 4) == 0){
+                    l = LOG_LEVEL_INFO;
                 }else if(strncasecmp(level, "WARN", 4) == 0){
                     l = LOG_LEVEL_WARN;
                 }else if(strncasecmp(level, "ERROR", 5) == 0){
@@ -296,36 +308,64 @@ int log::load_loggers(const std::string& conf, const appenders& apps, loggers& l
     return ret;
 }
 
+static const char* get_level_str(int level){
+    switch(level){
+    case LOG_LEVEL_ALL:
+        return "[ALL] ";
+    case LOG_LEVEL_DEBUG:
+        return "[DEBUG] ";
+    case LOG_LEVEL_TRACE:
+        return "[TRACE] ";
+    case LOG_LEVEL_INFO:
+        return "[INFO] ";
+    case LOG_LEVEL_WARN:
+        return "[WARN] ";
+    case LOG_LEVEL_ERROR:
+        return "[ERROR] ";
+    case LOG_LEVEL_NOT:
+        return "[NOT] ";
+    }
+    return "";
+}
+
 logger log::operator()(const std::string& logname, int level){
     logger lg;
-    
+    time_t n = time(NULL); 
     pthread_mutex_lock(&m_cs);
     loggers::iterator itor = m_logs.find(logname);
     if(itor != m_logs.end()){
         log_t l = itor->second;
-        if(level <= l.m_level)
+        if(level >= l.m_level){
             lg = logger(l.m_appender);
+        }
     }
     pthread_mutex_unlock(&m_cs);
+
+    lg << get_str_time_and_pid(n);
+    lg << get_level_str(level);
+    lg << "[" << logname << "] ";
 
     return lg;
 }
 
-fileappender::fileappender(const std::string& path, int schedu_span)
-    :m_path(path), m_schedu_span(schedu_span), m_last_open_time(0){
+fileappender::fileappender(const std::string& path, int schedu_span,
+    bool immediately_flush, int compress_type)
+    :m_path(path), m_schedu_span(schedu_span), m_last_open_time(0),
+    m_file(NULL), m_immediately_flush(immediately_flush),
+    m_compress_type(compress_type), m_refcnt(0){
     pthread_mutex_init(&m_cs, NULL);
 }
 
 fileappender::~fileappender(){
+    while(m_refcnt > 0);
     pthread_mutex_destroy(&m_cs); 
-    if(m_file.is_open())
-        m_file.close();
+    if(m_file)
+        fclose(m_file);
 }
 
 int fileappender::take(){
     time_t n = time(NULL);
     
-    pthread_mutex_lock(&m_cs);
     if(difftime(n, m_last_open_time) >= m_schedu_span){
         //open new file
         std::string filename;
@@ -341,13 +381,15 @@ int fileappender::take(){
             filename = m_path + "_" + get_str_day(n) + ".log";
             break;
         }
-        if(m_file.is_open()){
-            m_file.close();
+        pthread_mutex_lock(&m_cs);
+        if(m_file){
+            fclose(m_file);
         }
-        m_file.open(filename.c_str(), std::ios::app|std::ios::out); 
+        m_file = fopen(filename.c_str(), "ab+"); 
         m_last_open_time = n;
+        pthread_mutex_unlock(&m_cs);
     }
-    m_file << get_str_time_and_pid(n);
+    __sync_add_and_fetch(&m_refcnt, 1);
     return 0;
 }
 
@@ -374,44 +416,53 @@ int log::free_loggers(loggers& lgs){
 }
 
 int fileappender::give(){
-    m_file << '\n';
-    pthread_mutex_unlock(&m_cs);
-    return 0;
-}
-
-int fileappender::write_c(char c){
-    m_file << c;
-    return 0;
-}
-
-int fileappender::write_i(int i){
-    m_file << i;
-    return 0;
-}
-
-int fileappender::write_l(long l){
-    m_file << l;
-    return 0;
-}
-
-int fileappender::write_ll(long long ll){
-    m_file << ll;
-    return 0;
-}
-
-int fileappender::write_d(double d){
-    m_file << d;
-    return 0;
-}
-
-int fileappender::write_p(void* p){
-    m_file << p;
+    __sync_sub_and_fetch(&m_refcnt, 1);
     return 0;
 }
 
 int fileappender::write_s(const std::string& s){
-    m_file << s;
+    if(m_file){
+        pthread_mutex_lock(&m_cs);
+        fwrite(s.data(), s.size(), 1, m_file);
+        if(m_immediately_flush)
+            fflush(m_file);
+        pthread_mutex_unlock(&m_cs);
+    }
     return 0;
 }
+static log g_log;
+
+int elog_init(const std::string& config){
+    return g_log.init(config);
+}
+
+int elog_uninit(){
+    return g_log.uninit();
+}
+
+int elog_reload(const std::string& config){
+    return g_log.reload(config);
+}
+
+logger elog_debug(const std::string& logname){
+    return g_log(logname, LOG_LEVEL_DEBUG);
+}
+
+logger elog_trace(const std::string& logname){
+    return g_log(logname, LOG_LEVEL_TRACE);
+}
+
+logger elog_info(const std::string& logname){
+    return g_log(logname, LOG_LEVEL_INFO);
+}
+
+logger elog_warn(const std::string& logname){
+    return g_log(logname, LOG_LEVEL_WARN);
+}
+
+logger elog_error(const std::string& logname){
+    return g_log(logname, LOG_LEVEL_ERROR);
+}
+  
 
 }
