@@ -26,9 +26,7 @@ void* test_thread(void* p){
             << "c:" << c << ",i:" << i << ",l:" << l << ",ll:" << ll
             << ",d" << d << ",p:" << p << ",s:" << s;
 
-       elog::elog_debug("file_logger1") << "file test line:"
-            << "c:" << c << ",i:" << i << ",l:" << l << ",ll:" << ll
-            << ",d" << d << ",p:" << p << ",s:" << s;
+       elog::elog_debug("bin_logger") << s;
    }
    return 0; 
 }
@@ -73,6 +71,8 @@ int main(){
    elog::elog_debug("file_logger") << "file test line:"
             << "c:" << c << ",i:" << i << ",l:" << l << ",ll:" << ll 
             << ",d" << d << ",p:" << p << ",s:" << s;
+
+   elog::elog_debug("bin_logger") << s;
 
    elog::elog_debug("console_logger") << "sleep_ms(" << 3600 << ")";
    elog::sleep_ms(3600);
