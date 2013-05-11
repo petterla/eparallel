@@ -1,6 +1,7 @@
 #include "elog.h"
 #include "libconfig.h"
 #include <string.h>
+#include <arpa/inet.h>
 
 namespace elog{
 
@@ -259,6 +260,14 @@ int log::load_loggers(const std::string& conf, const appenders& apps, loggers& l
                 break; 
             }
 
+            int t = LOG_TYPE_NORMAL;
+            const char* type = NULL;
+            config_setting_lookup_string(logger, "type", &type);
+            if(type){
+                if(strncasecmp(type, "BINLOG", 6) == 0){
+                    t = LOG_TYPE_BINLOG;
+                }
+            }
             int l = LOG_LEVEL_NOT; 
             const char* level = NULL;
             config_setting_lookup_string(logger, "level", &level);
@@ -289,6 +298,7 @@ int log::load_loggers(const std::string& conf, const appenders& apps, loggers& l
                 break;
             } 
             log_t log;
+            log.m_type = t; 
             log.m_level = l;
             log.m_appender = const_cast<appenders&>(apps)[append];
             if(!log.m_appender){
@@ -328,22 +338,44 @@ static const char* get_level_str(int level){
     return "";
 }
 
+int logger::set_header() const{
+    if(m_os && m_type != LOG_TYPE_BINLOG){
+        time_t n = time(NULL); 
+        *m_os << get_str_time_and_pid(n)
+              << "[" << m_name << "] "
+              << get_level_str(m_level);
+    }
+    return 0;
+}
+
+int logger::write_to_appender(){
+    if(m_type == LOG_TYPE_BINLOG){
+        unsigned int s = m_os->str().size();
+        std::string msg;
+        s = htonl(s);
+        msg.append((char*)&s, sizeof(s));
+        msg.append(m_os->str().data(), m_os->str().size());
+        m_append->write_s(msg);
+    }else{
+        *m_os << '\n';
+        m_append->write_s(m_os->str());
+    }
+    m_append->give(); 
+    return 0;
+}
+
 logger log::operator()(const std::string& logname, int level){
     logger lg;
-    time_t n = time(NULL); 
     pthread_mutex_lock(&m_cs);
     loggers::iterator itor = m_logs.find(logname);
     if(itor != m_logs.end()){
-        log_t l = itor->second;
+        log_t& l = itor->second;
         if(level >= l.m_level){
-            lg = logger(l.m_appender);
+            lg = logger(logname, l.m_type, l.m_level, l.m_appender);
         }
     }
     pthread_mutex_unlock(&m_cs);
-
-    lg << get_str_time_and_pid(n);
-    lg << get_level_str(level);
-    lg << "[" << logname << "] ";
+    lg.set_header();
 
     return lg;
 }
