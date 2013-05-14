@@ -350,12 +350,12 @@ int logger::set_header() const{
 
 int logger::write_to_appender(){
     if(m_type == LOG_TYPE_BINLOG){
-        unsigned int s = m_os->str().size();
-        std::string msg;
-        s = htonl(s);
-        msg.append((char*)&s, sizeof(s));
-        msg.append(m_os->str().data(), m_os->str().size());
-        m_append->write_s(msg);
+        //unsigned int s = m_os->str().size();
+        //std::string msg;
+        //s = htonl(s);
+        //msg.append((char*)&s, sizeof(s));
+        //msg.append(m_os->str().data(), m_os->str().size());
+        m_append->write_s(m_os->str());
     }else{
         *m_os << '\n';
         m_append->write_s(m_os->str());
