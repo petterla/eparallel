@@ -370,8 +370,12 @@ namespace zvm{
 		ret = e->check_live(&s);
 		assert(!ret);
 		e->reset(&s);
+loop:
 		n = gc::try_collect(-1);
-		assert(n > 0);
+		//assert(n > 0);
+		if(n > 0){
+			goto loop;
+		}
 #ifdef ZVM_ENTRY_DEBUG
 		assert(cnt == entry::s_ent_cnt);
 #endif
@@ -398,8 +402,11 @@ namespace zvm{
 			obj* o3 = s.allocate(NULL);
 			o3->assign(&s, o2);
 			entry* e = o->get_entry();
+			std::cout << "o1->set_member_o(&s, 2, o);" <<std::endl;
 			o1->set_member_o(&s, 2, o);
+			std::cout << "o->set_member_o(&s, 2, o1);" <<std::endl;
 			o->set_member_o(&s, 2, o1);
+			std::cout << "o->set_member_o(&s, 2, o2);" <<std::endl;
 			o->set_member_o(&s, 3, o2);
 			assert(o->get_member_count(&s) == c.member_count());
 			//s.deallocate(o);
@@ -418,16 +425,24 @@ namespace zvm{
 			ret = e->find_loop(&s, e, true);
 			assert(ret);
 			ret = e->check_live(&s);
+
 			assert(!ret);
+
+
 #ifdef ZVM_ENTRY_DEBUG
 			assert(cnt < entry::s_ent_cnt);
 #endif
 			s32 n = gc::try_collect(-1);
 			assert(n > 0);
+
 			std::cout << "deallocate o3" <<std::endl;
 			s.deallocate(o3);
+loop:
 			n = gc::try_collect(-1);
-			assert(n > 0);
+			//assert(n > 0);
+			if(n > 0){
+				goto	loop;
+			}
 #ifdef ZVM_ENTRY_DEBUG
 			assert(cnt == entry::s_ent_cnt);
 #endif

@@ -5,6 +5,7 @@
 
 namespace zvm{
 
+
 	class gc_type;
 
 	class gc{
@@ -34,11 +35,10 @@ namespace zvm{
 
 
 		gc_type()
-			:m_status(STATUS_NULL),
-			m_flag(FLAG_NULL),
-			m_loop_cnt(0)
-
+			:m_loop_cnt(0),
+			m_ext_data(NULL)
 		{
+			*(s32*)m_flgs = 0;
 			gc::add(this);
 		}
 
@@ -47,20 +47,47 @@ namespace zvm{
 		}
 
 
-		s32& status(){
-			return	m_status;
+		s32 status(){
+			return	m_flgs[0];
 		}
 
-		s32& flag(){
-			return	m_flag;
+		s32 set_status(s32 sts){
+			m_flgs[0] = (s8)sts;
+			return	sts;
+		}
+
+		s32 flag(){
+			return	m_flgs[1];
+		}
+
+		s32	set_flag(s32 flg){
+			m_flgs[1] = (s8)flg;
+			return	flg;
+		}
+
+		virtual	entry* reference(stack* s){
+			inc_ref();
+			ZVM_DEBUG_PRINT("node:%p reference,ref_cnt:%d!\n", 
+				this, ref_count());
+			set_need_check(false);
+			return	this;
 		}
 
 		virtual s32 recycle(stack* s){
 			dec_ref();
+			ZVM_DEBUG_PRINT("node:%p recycle,ref_cnt:%d!\n", 
+				this, ref_count());
+			set_need_check(true);
 			return	SUCCESS;
 		}
 
 		bool try_collect(stack* s){
+
+			if(!need_check()){
+				ZVM_DEBUG_PRINT("node:%p not need check!\n", this);
+				return	false;
+			}
+
 			reset(s, true);
 			if(ref_count() <= 0){
 				clear(s);
@@ -71,6 +98,7 @@ namespace zvm{
 				clear(s);
 				return	true;
 			}
+
 			return	false;
 		}
 
@@ -101,8 +129,16 @@ namespace zvm{
 		}
 
 	private:
-		s32 m_status;
-		s32 m_flag;
+		s32	need_check(){
+			return	m_flgs[2];
+		}
+
+		s32	set_need_check(s32 n){
+			m_flgs[2] = n;
+			return	n;
+		}
+
+		s8 m_flgs[4];
 		s32 m_loop_cnt;
 		void* m_ext_data;
 	};
