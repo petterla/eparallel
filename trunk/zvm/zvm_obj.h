@@ -9,6 +9,7 @@
 
 #define ZVM_ENTRY_DEBUG
 
+
 namespace zvm{
 
 	class stack;
@@ -20,13 +21,13 @@ namespace zvm{
 		entry()
 			:m_ref_cnt(1){
 #ifdef ZVM_ENTRY_DEBUG
-			++s_ent_cnt;
+			be::atomic_increment32(&s_ent_cnt);
 #endif
 		}
 
 		virtual	~entry(){
 #ifdef ZVM_ENTRY_DEBUG
-			--s_ent_cnt;
+			be::atomic_decrement32(&s_ent_cnt);
 #endif
 		}
 
@@ -118,7 +119,7 @@ namespace zvm{
 
 #ifdef ZVM_ENTRY_DEBUG
 	public:
-		static int s_ent_cnt;
+		static volatile be::s32 s_ent_cnt;
 #endif
 	};
 

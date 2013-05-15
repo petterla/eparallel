@@ -5,7 +5,7 @@
 
 namespace zvm{
 #ifdef ZVM_ENTRY_DEBUG
-	int entry::s_ent_cnt = 0;
+	volatile be::s32 entry::s_ent_cnt = 0;
 #endif
 	classdef::~classdef(){
 		free();
@@ -219,11 +219,11 @@ namespace zvm{
 	entry* user_type::clone(stack* s){
 		//avoid loop clone
 		if(status() != STATUS_NULL){
-			status() = STATUS_NULL;
+			set_status(STATUS_NULL);
 			return	this;
 		}
 
-		status() = STATUS_CLONE;
+		set_status(STATUS_CLONE);
 		//do clone,
 		user_type* t = (user_type*)
 			s->alloc_mem(sizeof(user_type) 
@@ -263,7 +263,7 @@ namespace zvm{
 				return	NULL;
 		}
 		ac.set_entry(NULL);
-		status() = STATUS_NULL;
+		set_status(STATUS_NULL);
 		return	t;
 
 	}
@@ -389,10 +389,10 @@ namespace zvm{
 		ZVM_DEBUG_PRINT("user_type::clear:%p\n", this);
 		//loop reference
 		if(status() != STATUS_NULL){
-			status() = STATUS_NULL;
+			set_status(STATUS_NULL);
 			return	SUCCESS;
 		}
-		status() = STATUS_CLEAR;
+		set_status(STATUS_CLEAR);
 		obj* o = NULL;
 		u32 member_cnt = m_member_count;
 		for(u32 i = member_cnt; i > 0; --i){
@@ -409,7 +409,7 @@ namespace zvm{
 		}
 		//(1) must before (2),we can not use any member 
 		//of a obj afer the memory is free
-		status() = STATUS_NULL;//(1)
+		set_status(STATUS_NULL);//(1)
 		this->user_type::~user_type();
 		s->free_mem(this, sizeof(user_type) 
 			+ member_cnt * sizeof(s64));//(2)

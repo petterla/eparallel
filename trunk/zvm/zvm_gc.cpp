@@ -99,7 +99,7 @@ namespace zvm{
 	bool gc_type::find_loop(stack* s, entry* e, bool first){
 		bool ret = false;
 		//loop path
-		if(m_status == STATUS_SIGN){
+		if(status() == STATUS_SIGN){
 			if((entry*)this == e){
 				ret = true;
 				goto exit;
@@ -107,46 +107,48 @@ namespace zvm{
 			ret = false;
 			goto exit;
 		}
-		m_status = STATUS_SIGN;
+		set_status(STATUS_SIGN);
 		begin(s);
 		for(obj* r = get_refer_obj(s);r;r = get_refer_obj(s)){
 			//notice, all reference obj should check the loop
 			bool t = r->find_loop(s, e, false);
 			ret = ret || t;
 		}
-		m_status = STATUS_NULL;
+		set_status(STATUS_NULL);
 exit:
 		if(ret)
-			m_flag = FLAG_LOOP;
-		if(!first && m_flag)
+			set_flag(FLAG_LOOP);
+		if(!first && flag())
 			++m_loop_cnt;
 		ZVM_DEBUG_PRINT("find_loop:%p ,loop_cnt:%d ,ref_cnt:%d "
 			",flag:%d, first:%d, ret:%d\n",
-			this, m_loop_cnt, ref_count(), m_flag, first, ret);
+			this, m_loop_cnt, ref_count(), flag(), first, ret);
 		return	ret;
 	}
  
 	bool gc_type::check_live(stack* s){
 		bool ret = false;
-		if(m_flag != FLAG_LOOP){
+
+		if(flag() != FLAG_LOOP){
 			ZVM_DEBUG_PRINT("check_live:%p ,loop_cnt:%d ,ref_cnt:%d "
 				",flag:%d, m_flag != FLAG_LOOP, not live\n",
-				this, m_loop_cnt, ref_count(), m_flag);
+				this, m_loop_cnt, ref_count(), flag());
 			return	false;
 		}
+
 		if(m_loop_cnt < ref_count()){
 			ZVM_DEBUG_PRINT("check_live:%p ,loop_cnt:%d ,ref_cnt:%d "
 				",flag:%d, m_loop_cnt < ref_count(), live\n",
-				this, m_loop_cnt, ref_count(), m_flag);
+				this, m_loop_cnt, ref_count(), flag());
 			return true;
 		}
-		if(m_status == STATUS_CHECK){
+		if(status() == STATUS_CHECK){
 			ZVM_DEBUG_PRINT("check_live:%p ,loop_cnt:%d ,ref_cnt:%d "
 				",flag:%d, m_status == STATUS_CHECK, not live\n",
-				this, m_loop_cnt, ref_count(), m_flag);
+				this, m_loop_cnt, ref_count(), flag());
 			return false;
 		}
-		m_status = STATUS_CHECK;
+		set_status(STATUS_CHECK);
 
 		begin(s);
 		for(obj* r = get_refer_obj(s);r;r = get_refer_obj(s)){
@@ -155,24 +157,24 @@ exit:
 				break;
 			}
 		}
-		m_status = STATUS_NULL;
+		set_status(STATUS_NULL);
 		return	ret;
 	}
 
 	bool gc_type::reset(stack* s, bool force){
 		bool ret = true;
 		if(force)
-			m_status = STATUS_NULL;
-		if(m_status == STATUS_RESET)
+			set_status(STATUS_NULL);
+		if(status() == STATUS_RESET)
 			return	true;
-		m_status = STATUS_RESET;
-		m_flag = FLAG_NULL;
+		set_status(STATUS_RESET);
+		set_flag(FLAG_NULL);
 		m_loop_cnt = 0;
 		begin(s);
 		for(obj* r = get_refer_obj(s);r;r = get_refer_obj(s)){
 			r->reset(s);
 		}
-		m_status = STATUS_NULL;
+		set_status(STATUS_NULL);
 		return	ret;
 	}
 
