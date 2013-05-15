@@ -5,7 +5,9 @@
 #include "ef_sock.h"
 #include "ef_log.h"
 #include <string.h>
+#ifndef	_WIN32
 #include <errno.h>
+#endif
 
 namespace	ef{
 

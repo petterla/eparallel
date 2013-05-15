@@ -1,7 +1,18 @@
 #include "elog.h"
 #include "libconfig.h"
-#include <string.h>
+#include "be_atomic.h"
+#include "be_string.h"
+
+#ifdef _WIN32
+#include <Windows.h>
+#else
 #include <arpa/inet.h>
+#endif
+#ifdef _WIN32
+#include <process.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace elog{
 
@@ -46,19 +57,19 @@ std::string get_str_time_and_pid(time_t n){
 }
 
 log::log(){
-    pthread_mutex_init(&m_cs, NULL);
+	be::be_mutex_init(&m_cs);
 }
 
 log::~log(){
     uninit();
-    pthread_mutex_destroy(&m_cs);
+	be::be_mutex_destroy(&m_cs);
 }
 
 int log::init(const std::string& config){
 
     int ret = 0;
     
-    pthread_mutex_lock(&m_cs);    
+	be::be_mutex_take(&m_cs);    
     do{
         ret = load_appenders(config, m_appends); 
         if(ret < 0){
@@ -72,7 +83,7 @@ int log::init(const std::string& config){
         }
     }while(0);
     m_config = config;
-    pthread_mutex_unlock(&m_cs);
+    be::be_mutex_give(&m_cs);
 
     return ret;
 }
@@ -102,11 +113,11 @@ int log::reload(const std::string& config){
             std::cout << "reload log <config:" << conf << "> load loggers fail\n";
             break;
         }
-        pthread_mutex_lock(&m_cs);
+        be::be_mutex_take(&m_cs);
         apps.swap(m_appends);
         lgs.swap(m_logs);
         m_config = conf;
-        pthread_mutex_unlock(&m_cs);
+        be::be_mutex_give(&m_cs);
     }while(0); 
      
     free_appenders(apps);
@@ -366,7 +377,7 @@ int logger::write_to_appender(){
 
 logger log::operator()(const std::string& logname, int level){
     logger lg;
-    pthread_mutex_lock(&m_cs);
+	be::be_mutex_take(&m_cs);
     loggers::iterator itor = m_logs.find(logname);
     if(itor != m_logs.end()){
         log_t& l = itor->second;
@@ -374,7 +385,7 @@ logger log::operator()(const std::string& logname, int level){
             lg = logger(logname, l.m_type, l.m_level, l.m_appender);
         }
     }
-    pthread_mutex_unlock(&m_cs);
+    be::be_mutex_give(&m_cs);
     lg.set_header();
 
     return lg;
@@ -385,12 +396,12 @@ fileappender::fileappender(const std::string& path, int schedu_span,
     :m_path(path), m_schedu_span(schedu_span), m_last_open_time(0),
     m_file(NULL), m_immediately_flush(immediately_flush),
     m_compress_type(compress_type), m_refcnt(0){
-    pthread_mutex_init(&m_cs, NULL);
+		be::be_mutex_init(&m_cs);
 }
 
 fileappender::~fileappender(){
     while(m_refcnt > 0);
-    pthread_mutex_destroy(&m_cs); 
+    be::be_mutex_destroy(&m_cs); 
     if(m_file)
         fclose(m_file);
 }
@@ -413,23 +424,23 @@ int fileappender::take(){
             filename = m_path + "_" + get_str_day(n) + ".log";
             break;
         }
-        pthread_mutex_lock(&m_cs);
+		be::be_mutex_take(&m_cs);
         if(m_file){
             fclose(m_file);
         }
         m_file = fopen(filename.c_str(), "ab+"); 
         m_last_open_time = n;
-        pthread_mutex_unlock(&m_cs);
+        be::be_mutex_give(&m_cs);
     }
-    __sync_add_and_fetch(&m_refcnt, 1);
+	be::atomic_decrement32(&m_refcnt);
     return 0;
 }
 
 int log::uninit(){
-    pthread_mutex_lock(&m_cs);
+    be::be_mutex_take(&m_cs);
     free_loggers(m_logs);
     free_appenders(m_appends);
-    pthread_mutex_unlock(&m_cs);
+    be::be_mutex_give(&m_cs);
     return 0;
 }
 
@@ -448,17 +459,17 @@ int log::free_loggers(loggers& lgs){
 }
 
 int fileappender::give(){
-    __sync_sub_and_fetch(&m_refcnt, 1);
+    be::atomic_increment32(&m_refcnt);
     return 0;
 }
 
 int fileappender::write_s(const std::string& s){
     if(m_file){
-        pthread_mutex_lock(&m_cs);
+		be::be_mutex_take(&m_cs);
         fwrite(s.data(), s.size(), 1, m_file);
         if(m_immediately_flush)
             fflush(m_file);
-        pthread_mutex_unlock(&m_cs);
+        be::be_mutex_give(&m_cs);
     }
     return 0;
 }

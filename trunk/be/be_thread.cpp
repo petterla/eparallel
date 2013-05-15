@@ -4,7 +4,8 @@
 namespace	be{
 
 
-int	be_thread_create(THREADHANDLE*	thread, void* attr, PTHREAD_FUNC start_routine, void* arg)
+int	be_thread_create(THREADHANDLE*	thread, void* attr, 
+					 PTHREAD_FUNC start_routine, void* arg)
 {
 	int		ret	=	0;
 #ifdef _WIN32
@@ -91,7 +92,7 @@ int	be_mutex_destroy(MUTEX*			mtx)
 }
 
 
-int	be_sem_init	(SEMAPHORE*		sem, int initcnt,	int	maxcnt)
+int	be_sem_init	(SEMAPHORE* sem, int initcnt, int maxcnt)
 {
 	int		ret	=	0;
 #ifdef	_WIN32
@@ -103,7 +104,7 @@ int	be_sem_init	(SEMAPHORE*		sem, int initcnt,	int	maxcnt)
 #endif
 	return	ret;
 }
-int	be_sem_take		(SEMAPHORE*		sem)
+int	be_sem_take (SEMAPHORE* sem)
 {
 	int		ret	=	0;
 #ifdef	_WIN32
@@ -120,7 +121,7 @@ loop:
 	return	ret;
 }
 
-int	be_sem_try_take	(SEMAPHORE*		sem)
+int	be_sem_try_take (SEMAPHORE* sem)
 {
 	int		ret	=	0;
 #ifdef	_WIN32
@@ -128,11 +129,11 @@ int	be_sem_try_take	(SEMAPHORE*		sem)
 	dwret	=	WaitForSingleObject(*sem, 0);
 	if(dwret != WAIT_OBJECT_0)	ret	=	-1;
 #else
-loop:
+//loop:
 	ret	=	sem_trywait(sem);
-	if(ret < 0 && errno == EINTR){
-		goto loop;
-	}
+	//if(ret < 0 && errno == EINTR){
+	//	goto loop;
+	//}
 #endif
 	return	ret;
 }
@@ -164,7 +165,7 @@ int	be_sem_destroy	(SEMAPHORE*		sem)
 	return	ret;
 }
 
-int	be_sleep		(int msec)
+int	be_sleep (int msec)
 {
 	int		ret	=	0;	
 #ifdef _WIN32
