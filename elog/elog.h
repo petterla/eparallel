@@ -5,8 +5,9 @@
 #include <map>
 #include <iostream>
 #include <sstream>
-#include <pthread.h> 
 #include <time.h>
+#include "be_type.h"
+#include "be_thread.h"
 
 //this is thread safe
 namespace elog{
@@ -152,14 +153,14 @@ namespace elog{
         virtual int give();
         virtual int write_s(const std::string& s);
     private:
-        pthread_mutex_t m_cs;
+		be::MUTEX m_cs;
         std::string m_path;
         int m_schedu_span;
         time_t m_last_open_time; 
         FILE* m_file;
         bool m_immediately_flush;
         int m_compress_type;
-        volatile int m_refcnt;
+		volatile be::s32 m_refcnt;
     };
 
 
@@ -301,7 +302,7 @@ namespace elog{
         static int free_appenders(appenders& apps);
         static int free_loggers(loggers& lgs);
 
-        pthread_mutex_t m_cs;
+		be::MUTEX m_cs;
         std::string m_config;
         loggers m_logs;
         appenders m_appends;
