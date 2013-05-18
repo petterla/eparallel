@@ -1,5 +1,6 @@
 project(elog)
 add_definitions("-Wall -g")
+include_directories(${PROJECT_SOURCE_DIR}/../be)
 set(LIBRARY_OUTPUT_PATH lib)
 link_libraries(pthread config)
 AUX_SOURCE_DIRECTORY(. SRC_LIST)
