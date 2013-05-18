@@ -1,0 +1,42 @@
+
+enum Command{
+   GET_CHARM_REQ = 1001;
+   GET_CHARM_RESP = 1002; 
+   INTEREST_REQ = 1003;
+   INTEREST_RESP = 1004;  
+};
+
+message Person{
+   required string phone = 1;
+   optional string name = 2;
+}
+
+message GetCharmRequest{
+   required string phone = 1;
+   optional string name = 2;
+}
+
+message GetCharmRespone{
+   required int32 charm_mark = 1;
+   repeated Person instert_person = 2;
+}
+
+message InterestRequest{
+   required string phone = 1;
+   optional string message = 2;   
+}
+
+message InterestRespone{
+ 
+}
+
+message Request{
+   optional GetCharmRequest get_charm_req = 1;
+   optional InterestRequest interest_req =2;
+}
+
+message Response{
+   required int32 status = 1;
+   optional GetCharmRespone get_charm_resp = 2;
+   optional InterestRequest interest_resp = 3;
+}
