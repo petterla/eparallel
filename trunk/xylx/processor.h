@@ -11,7 +11,8 @@ class processor{
 public:
     int32 process(const std::string& req, std::string& resp, void* par);
 private:
-    int32 handle_get_charm_req(const Request& req, Response& resp);
+    int32 handle_get_charm_req(const Request& req, Response& resp, void* par);
+    int32 handle_interest_req(const Request& req, Response& resp, void* par);
 }
 }
 

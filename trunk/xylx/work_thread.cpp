@@ -7,8 +7,10 @@ namespace	group{
 	const	char*	work_thread::tag = "work_thread";
 
 	work_thread::work_thread(group_db *db,
-		const char* addr, const char* user, const char* passwd)
-		:m_db(db)
+		const char* host, const char* user, 
+		const char* passwd, int32 port, const char* db)
+		:m_db(db), m_host(host), m_user(user), 
+		m_passwd(passwd), m_port(port), m_dbtabase(db)
 	{
 
 
@@ -40,12 +42,20 @@ namespace	group{
 	}
 
 	int32	work_thread::init(){
+                int32 ret = 0;
 		elog::elog_error(tag) <<  "work_thread:" << this << " init!";
+		ret = m_mysql.init(m_dbhost, m_user, m_passwd, m_dbtabase, m_port);
+		if(ret < 0){
+			elog::elog_error(tag) <<  "work_thread:" << this << " initi mysql fail!";
+			return	-1;
+		}
+
 		return	0;
 	}
 
 	int32	work_thread::clear(){
 		elog::elog_error(tag) <<  "work_thread:" << this << " clear!";
+		m_mysql.clear();
 		return	0;
 	}
 
