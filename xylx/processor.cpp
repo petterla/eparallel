@@ -34,4 +34,12 @@ int32 processor::process(const std::string& req, std::string&resp, void* par){
     }
     return 0;
 }
+
+int32 processor::handle_get_charm_req(const Request& req, Response& resp, void* par){
+
+}
+
+int32 processor::handle_interest_req(const Request& req, Response& resp, void* par){
+}
+
 }
