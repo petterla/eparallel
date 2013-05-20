@@ -4,28 +4,29 @@
 #include <cassert>
 #include <stddef.h>
 #include <stdio.h>
+#include "be_type.h"
 
 namespace zvm{
 
-	typedef unsigned long long  u64;
+	typedef be::u64  u64;
 
-	typedef long long           s64;
+	typedef be::s64  s64;
 
-	typedef unsigned int        u32;
+	typedef be::u32  u32;
 
-	typedef int                 s32;
+	typedef be::s32  s32;
 
-	typedef unsigned short int  u16;
+	typedef be::u16  u16;
 
-	typedef short int           s16;
+	typedef be::s16  s16;
 
-	typedef unsigned char       u8;
+	typedef be::u8   u8;
 
-	typedef char                s8;
+	typedef be::s8   s8;
 
-	typedef	float				f32;
+	typedef be::f32  f32;
 
-	typedef double				f64;
+	typedef be::d64  f64;
 
 	enum{
 		LOCAL_TYPE_INT = 0,

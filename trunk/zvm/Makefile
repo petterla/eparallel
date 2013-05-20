@@ -30,7 +30,7 @@ DEFS = -D_DEBUG
 IFLAGS = -I$(ep_inc) -I$(be_inc)
 CFLAGS = -Wall $(IFLAGS1) 
 APPLIBS = 
-SYSLIBS = -lpthread ../be/bin/libbe.a 
+SYSLIBS = -lpthread ../be/lib/libbe.a 
 LFLAGS = -L/usr/lib64 -L/usr/local/lib64 -L/usr/lib -L/usr/local/lib 
 CFLAGS = -g -Wall -DUNIX $(DEFS) $(IFLAGS) 
 
@@ -68,13 +68,16 @@ so: clean $(sobin)
 debug: clean $(bin)
 clean: 
 	$(RM) $(objs)
-	$(RM) $(bin)
 show:
 	@echo $(bin)
 	ls $(objs)
 
 #################################################################
 #  Additional Rules
+
+$(sobin): $(objs) 
+	$(SOLINK) $@ $? 
+
 $(bin): $(objs) 
 	$(CC) -o $(bin) $(objs) $(SYSLIBS)
 $(obj)/%.o: $(ep_src)/%.cpp 
