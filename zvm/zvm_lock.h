@@ -13,16 +13,16 @@ namespace zvm{
 
 		}
 
-		s32	lock(s32 par);
+		s32 lock(s32 par);
 
 		s32 unlock(s32 par);
 
-		s32	try_lock(s32 par);
+		s32 try_lock(s32 par);
 
 		s32 try_unlock(s32 par);
 
 	private:
-		volatile	s32	m_owner;
+		volatile	be::s32	m_owner;
 		s32			m_cnt;
 	};
 
@@ -42,7 +42,7 @@ namespace zvm{
 		s32 try_unlock(s32 par);
 
 	private:
-		volatile	s32	m_flag;
+		volatile	be::s32	m_flag;
 	};
 
 	class	rw_lock{

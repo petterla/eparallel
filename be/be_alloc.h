@@ -38,7 +38,7 @@
 
 namespace	be{
 
-
+#ifdef USE_LOCK_FREE_MEM_POOL
 
 	class lfmem_pool
 	{
@@ -48,22 +48,22 @@ namespace	be{
 			EXPANSION_SIZE	=	256,
 		};
 
-		lfmem_pool(long	elesz	=	8,
-			long	cap	=	EXPANSION_SIZE,	long	escal	=	EXPANSION_SIZE)
+		lfmem_pool(s32	elesz	=	8,
+			s32	cap	=	EXPANSION_SIZE,	s32	escal	=	EXPANSION_SIZE)
 			:freelist(0),elesize(elesz),escalate(escal),memblocks(0)
 #ifdef ALLOC_DEBUG			
 			,capacity(0),used(0),left(0),loop(0)
 #endif/*ALLOC_DEBUG*/
 		{
-			if(elesize	<	(long)sizeof(node*))	elesize	=	(long)sizeof(node*);
+			if(elesize	<	(s32)sizeof(node*))	elesize	=	(s32)sizeof(node*);
 #ifdef	ALLOC_DEBUG
-			elesize	+=	sizeof(unsigned	int)	*	2;
+			elesize	+=	sizeof(u32)	*	2;
 #endif
 		}
 		~lfmem_pool()
 		{
 			for(;	memblocks;){
-				block*	next	=	(block*)memblocks->next;
+				block*	next	=	(block*)((block*)memblocks)->next;
 				delete	(char*)memblocks;
 				memblocks		=	next;
 			}
@@ -73,21 +73,21 @@ namespace	be{
 		inline	void	fill_flag	(void*	pv)
 		{
 			char*	pt	=	(char*)pv;
-			*(unsigned int*)pt	=	(unsigned	int)this;
-			*(unsigned int*)(pt	+	elesize	-	sizeof(unsigned	int))
-				=	(unsigned	int)this	+	0XFF;
+			*(u32*)pt	=	(u32)this;
+			*(u32*)(pt	+	elesize	-	sizeof(u32))
+				=	(u32)this	+	0XFF;
 		}
 
 		inline	bool	check_flag	(void*	pv)
 		{
 			bool	ret	=	0;
 			char*	pt	=	(char*)pv;	
-			ret	=	*(unsigned int*)(pt	-	sizeof(unsigned	int))
-				==	(unsigned	int)this
-				&&	*(unsigned int*)(pt	+	elesize	-	sizeof(unsigned	int)	*	2)	
-				==	(unsigned	int)this	+	0XFF;	
-			*(long*)(pt	+	elesize	-	sizeof(unsigned	int)	*	2)	
-				=	(unsigned	int)this;
+			ret	=	*(u32*)(pt	-	sizeof(u32))
+				==	(u32)this
+				&&	*(u32*)(pt	+	elesize	-	sizeof(u32)	*	2)	
+				==	(u32)this	+	0XFF;	
+			*(s32*)(pt	+	elesize	-	sizeof(u32)	*	2)	
+				=	(u32)this;
 			return	ret;
 		}
 
@@ -100,8 +100,8 @@ namespace	be{
 			do{
 				blocks			=	(VOLATILE_	block*)memblocks;
 				pblock->next	=	blocks;
-			}while(atomic_compare_exchange32((volatile	long*)&memblocks,	
-				(long)pblock,	(long)blocks)	!=	(long)blocks);
+			}while(atomic_compare_exchange_ptr(&memblocks,	
+				(void*)pblock,	(void*)blocks)	!=	(void*)blocks);
 		}
 
 		void*	allocate	()
@@ -152,25 +152,25 @@ namespace	be{
 					//因为如果freelist此时不等于oldheader,但是在执行到note5时可能又变成与oldheader相等的值，即发生了ABA现象
 					//则执行会出错
 					target			=	newbuf_head;
-					newhead.head	=	(long)newbuf_head->next;
+					newhead.head	=	(s32)newbuf_head->next;
 
 				}
 				else if (oldhead.head)
 				{
 					target			=	(VOLATILE_	node*)oldhead.head;//note4
-					newhead.head	=	(long)target->next;
+					newhead.head	=	(s32)target->next;
 				}
 				newhead.magic	=	oldhead.magic	+	1;
 
 			}
-			while(atomic_compare_exchange64((long	long	volatile*)&freelist, *(long	long*)&newhead,
-				*(long	long*)&oldhead)	!=	*(long	long*)&oldhead);//note5
+			while(atomic_compare_exchange64((s64 volatile*)&freelist, *(s64*)&newhead,
+				*(s64*)&oldhead)	!=	*(s64*)&oldhead);//note5
 
 #ifdef	ALLOC_DEBUG
 			atomic_increment32(&used);
 			atomic_decrement32(&left);
 			fill_flag(target);
-			return	(char*)target	+	sizeof(unsigned	int);
+			return	(char*)target	+	sizeof(u32);
 #else
 			return	(void*)target;
 #endif/*ALLOC_DEBUG*/
@@ -181,19 +181,19 @@ namespace	be{
 			if(!pv)	return;
 #ifdef	ALLOC_DEBUG
 			assert(check_flag(pv));
-			pv	=	(char*)pv	-	sizeof(unsigned	int);
+			pv	=	(char*)pv	-	sizeof(u32);
 #endif/*ALLOC_DEBUG*/
 			VOLATILE_	head_node	newhead;
 			VOLATILE_	head_node	oldhead	=	*(VOLATILE_	head_node*)&freelist;
-			newhead.head	=	(long)pv;
+			newhead.head	=	(s32)pv;
 			do{
 				oldhead				=	*(VOLATILE_	head_node*)&freelist;
 				((node*)pv)->next	=	(node*)oldhead.head;
 				newhead.magic		=	oldhead.magic	+	1;	
 			}
-			while (atomic_compare_exchange64((long	long	volatile*)&freelist,
-				*(long	long*)&newhead,	*(long	long*)&oldhead) 
-				!=	*(long	long*)&oldhead);
+			while (atomic_compare_exchange64((s64 volatile*)&freelist,
+				*(s64*)&newhead,	*(s64*)&oldhead) 
+				!=	*(s64*)&oldhead);
 
 #ifdef ALLOC_DEBUG
 			atomic_increment32(&left);
@@ -225,28 +225,30 @@ namespace	be{
 			volatile	block*	next;
 		};
 		struct	head_node{
-			long	head;
-			long	magic;
-			head_node(long	hd	=	0,	long	nxt	=	0):head(hd),	magic(nxt)
+			union{
+				s32	head;
+				s32	magic;
+			}
+			head_node(s32	hd	=	0,	s32	nxt	=	0):head(hd),	magic(nxt)
 			{
 
 			}
 		};
 		volatile	head_node	freelist;
-		volatile	long		elesize;
-		volatile	long		escalate;
-		volatile	block*		memblocks;
+		volatile	s32		elesize;
+		volatile	s32		escalate;
+		volatile	void*		memblocks;
 #ifdef ALLOC_DEBUG
 
-		volatile	long		capacity;
-		volatile	long		used;
-		volatile	long		left;
-		volatile	long		loop;
+		volatile	s32		capacity;
+		volatile	s32		used;
+		volatile	s32		left;
+		volatile	s32		loop;
 #endif/*ALLOC_DEBUG*/
 
 	};
 
-
+#endif
 	class swplfmem_pool
 	{
 	public:
@@ -255,16 +257,16 @@ namespace	be{
 			EXPANSION_SIZE	=	256,
 		};
 
-		swplfmem_pool(long	elesz,	long	cap	=	EXPANSION_SIZE,
-			long	escal	=	EXPANSION_SIZE)
+		swplfmem_pool(s32	elesz,	s32	cap	=	EXPANSION_SIZE,
+			s32	escal	=	EXPANSION_SIZE)
 			:index(1),bucknumbits(0),elesize(elesz),escalate(escal),memblocks(0)
 #ifdef ALLOC_DEBUG			
 			,capacity(0),used(0),left(0),loop(0)
 #endif/*ALLOC_DEBUG*/
 		{
-			if(elesize	<	(long)sizeof(node*))	elesize	=	(long)sizeof(node*);
+			if(elesize	<	(s32)sizeof(node*))	elesize	=	(s32)sizeof(node*);
 #ifdef	ALLOC_DEBUG
-			elesize	+=	sizeof(unsigned	int)	*	2;
+			elesize	+=	sizeof(u32)	*	2;
 #endif
 			bucketnum	=	128;
 			buckets		=	new	bucket[bucketnum];
@@ -282,7 +284,7 @@ namespace	be{
 		~swplfmem_pool()
 		{
 			for(;	memblocks;){
-				block*	next	=	(block*)memblocks->next;
+				block*	next	=	(block*)((block*)memblocks)->next;
 				delete	(char*)memblocks;
 				memblocks		=	next;
 			}
@@ -292,21 +294,21 @@ namespace	be{
 		inline	void	fill_flag	(void*	pv)
 		{
 			char*	pt	=	(char*)pv;
-			*(unsigned int*)pt	=	(unsigned	int)this;
-			*(unsigned int*)(pt	+	elesize	-	sizeof(unsigned	int))
-				=	(unsigned	int)this	+	0XFF;
+			*(u32*)pt	=	(u32)this;
+			*(u32*)(pt	+	elesize	-	sizeof(u32))
+				=	(u32)this	+	0XFF;
 		}
 
 		inline	bool	check_flag	(void*	pv)
 		{
 			bool	ret	=	0;
 			char*	pt	=	(char*)pv;	
-			ret	=	*(unsigned int*)(pt	-	sizeof(unsigned	int))
-				==	(unsigned	int)this
-				&&	*(unsigned int*)(pt + elesize - sizeof(unsigned int) * 2)	
-				==	(unsigned	int)this	+	0XFF;	
-			*(long*)(pt	+	elesize	-	sizeof(unsigned	int)	*	2)	
-				=	(unsigned	int)this;
+			ret	=	*(u32*)(pt	-	sizeof(u32))
+				==	(u32)this
+				&&	*(u32*)(pt + elesize - sizeof(u32) * 2)	
+				==	(u32)this	+	0XFF;	
+			*(s32*)(pt	+	elesize	-	sizeof(u32)	*	2)	
+				=	(u32)this;
 			return	ret;
 		}
 
@@ -356,8 +358,8 @@ namespace	be{
 			do{
 				blocks			=	(VOLATILE_	block*)memblocks;
 				pblock->next	=	blocks;
-			}while(atomic_compare_exchange32((volatile	long*)&memblocks,	
-				(long)pblock,	(long)blocks)	!=	(long)blocks);
+			}while(atomic_compare_exchange_ptr(&memblocks,	
+				pblock,	blocks)	!=	blocks);
 		}
 
 		void*	allocate	()
@@ -430,7 +432,7 @@ namespace	be{
 			atomic_decrement32(&left);
 			fill_flag(target);
 			assert((u32)target	!=	(u32)this);
-			return	(char*)target	+	sizeof(unsigned	int);
+			return	(char*)target	+	sizeof(u32);
 #else
 			return	(void*)target;
 #endif/*ALLOC_DEBUG*/
@@ -442,7 +444,7 @@ namespace	be{
 			atomic_increment32(&count);
 #ifdef	ALLOC_DEBUG
 			assert(check_flag(pv));
-			pv	=	(char*)pv	-	sizeof(unsigned	int);
+			pv	=	(char*)pv	-	sizeof(u32);
 #endif/*ALLOC_DEBUG*/
 
 			u32			idx			=	0;
@@ -505,15 +507,15 @@ namespace	be{
 		bucket*		buckets;
 		s32			bucknumbits;
 
-		volatile	long		elesize;
-		volatile	long		escalate;
-		volatile	block*		memblocks;
+		volatile	s32		elesize;
+		volatile	s32		escalate;
+		volatile	void*		memblocks;
 #ifdef ALLOC_DEBUG
 
-		volatile	long		capacity;
-		volatile	long		used;
-		volatile	long		left;
-		volatile	long		loop;
+		volatile	s32		capacity;
+		volatile	s32		used;
+		volatile	s32		left;
+		volatile	s32		loop;
 #endif/*ALLOC_DEBUG*/
 
 	};
@@ -538,7 +540,7 @@ namespace	be{
 				elesize	=	elesz	>	(s32)sizeof(node*)	?
 							elesz	:	(s32)sizeof(node*);
 #ifdef	ALLOC_DEBUG
-				elesize	+=	sizeof(unsigned	int)	*	2;
+				elesize	+=	sizeof(u32)	*	2;
 #endif
 
 		}
@@ -557,21 +559,21 @@ namespace	be{
 		inline	void	fill_flag	(void*	pv)
 		{
 			char*	pt	=	(char*)pv;
-			*(unsigned int*)pt	=	(unsigned	int)this;
-			*(unsigned int*)(pt	+	elesize	-	sizeof(unsigned	int))
-				=	(unsigned	int)this	+	0XFF;
+			*(u32*)pt	=	(u32)this;
+			*(u32*)(pt	+	elesize	-	sizeof(u32))
+				=	(u32)this	+	0XFF;
 		}
 
 		inline	bool	check_flag	(void*	pv)
 		{
 			bool	ret	=	0;
 			char*	pt	=	(char*)pv;	
-			ret	=	*(unsigned int*)(pt	-	sizeof(unsigned	int))
-				==	(unsigned	int)this
-				&&	*(unsigned	int*)(pt + elesize - sizeof(unsigned int) * 2)	
-				==	(unsigned	int)this	+	0XFF;	
-			*(unsigned	int*)(pt + elesize - sizeof(unsigned int) * 2)	
-				=	(unsigned	int)this;
+			ret	=	*(u32*)(pt	-	sizeof(u32))
+				==	(u32)this
+				&&	*(u32*)(pt + elesize - sizeof(u32) * 2)	
+				==	(u32)this	+	0XFF;	
+			*(u32*)(pt + elesize - sizeof(u32) * 2)	
+				=	(u32)this;
 				return	ret;
 		}
 
@@ -693,7 +695,7 @@ namespace	be{
 			atomic_increment32(&used);
 			atomic_decrement32(&left);
 			fill_flag(target);
-			return	(char*)target	+	sizeof(unsigned	int);
+			return	(char*)target	+	sizeof(u32);
 
 #else
 			return	(void*)target;
@@ -706,7 +708,7 @@ namespace	be{
 
 #ifdef	ALLOC_DEBUG
 			assert(check_flag(pv));
-			pv	=	(char*)pv	-	sizeof(unsigned	int);
+			pv	=	(char*)pv	-	sizeof(u32);
 #endif/*ALLOC_DEBUG*/
 
 #ifdef	RTRY_LOCK
@@ -784,14 +786,14 @@ namespace	be{
 	public:
 		typedef	zmem_pool	pool_t;
 	};
-
+#ifdef USE_LOKC_FREE_MEM_POOL
 	template<>
 	class	smem_pool<4>
 	{
 	public:
 		typedef	lfmem_pool	pool_t;
 	};
-
+#endif
 	typedef	smem_pool<sizeof(void*)>::pool_t	mem_pool;
 
 
@@ -956,7 +958,7 @@ namespace	be{
 	class mem_cache
 	{
 	public:
-		mem_cache(long	elsz	=	sizeof(T)):m_freelist(0),m_elseize(elsz),m_size(0)
+		mem_cache(s32	elsz	=	sizeof(T)):m_freelist(0),m_elseize(elsz),m_size(0)
 		{
 		}
 		~mem_cache()
@@ -1057,7 +1059,7 @@ namespace	be{
 			node*	next;
 		};
 		node*	m_freelist;
-		long	m_elseize;
+		s32	m_elseize;
 		size_t	m_size;
 	};
 

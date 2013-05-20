@@ -49,7 +49,7 @@ namespace	be{
         return	atomic_compare_exchange64(dst,	val,	cmp)	==	cmp;
     }
 
-    long	atomic_compare_exchange32	(volatile	s32*	dst,
+    s32		atomic_compare_exchange32	(volatile	s32*	dst,
         s32	val,	s32	cmp)
     {
 	s32 ret = val;
@@ -129,16 +129,24 @@ namespace	be{
 #endif/*defined(__GNUC__)*/
     }
 
+
     void*	atomic_compare_exchange_ptr	(volatile	void**	dst,
         void*	val,	void*	cmp)
     {
+#ifdef _WIN32
         if(sizeof(void*)	==	8){
             return	(void*)atomic_compare_exchange64((volatile s64*)(dst),
-                (s64)val,	(s64)cmp);
+                (s64)val, (s64)cmp);
         }else{
             return	(void*)atomic_compare_exchange32((volatile s32*)(dst),
-                (s32)val,	(s32)cmp);
+                (s32)val, (s64)cmp);
         }
+
+#endif
+#ifdef __GNUC__
+
+	return __sync_val_compare_and_swap((void**)dst, (void*)cmp, (void*)val);
+#endif
     }
 
     s64		atomic_exchange64(volatile s64* dst, s64 val)
@@ -150,13 +158,8 @@ namespace	be{
     void*	atomic_exchange_ptr		(volatile	void**	dst,	
         void*	val)
     {
-        if(sizeof(void*)	==	8){
-            return	(void*)atomic_exchange64((volatile s64*)(dst),
-                (s64)val);
-        }else{
-            return	(void*)atomic_exchange32((volatile s32*)(dst),
-                (s32)val);
-        }
+        *dst	=	val;
+        return	val;
     }
 
     s32		get_cpu_core()

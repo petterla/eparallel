@@ -43,41 +43,19 @@ namespace elog{
         virtual ~appender(){
         }
 
-        virtual int take(){
-            return 0;
-        }
-
-        virtual int give(){
-            return 0;
-        }
-
-       	virtual int write_c(char c){
-            return 0;
-        }
-
-        virtual int write_i(int i){
-            return 0;
-        }
-
-        virtual int write_l(long l){
-            return 0;
-        }
-
-        virtual int write_ll(long long ll){
-            return 0;
-        }
-
-        virtual int write_d(double d){
-            return 0;
-        }
-
-        virtual int write_p(const void* p){
-            return 0;
-        }
-
         virtual int write_s(const std::string& s){
             return 0;
         }
+
+	virtual int take(){
+            //cout time
+            return 0;
+        }
+
+	virtual int give(){
+            return 0;
+        }
+
 
     private:
         appender(const appender&);
@@ -92,36 +70,6 @@ namespace elog{
         }
 
 	virtual int give(){
-            return 0;
-        }
-
-       	virtual int write_c(char c){
-            std::cout << c;
-            return 0;
-        }
-
-        virtual int write_i(int i){
-            std::cout << i;
-            return 0;
-        }
-
-        virtual int write_l(long l){
-            std::cout << l;
-            return 0;
-        }
-
-        virtual int write_ll(long long ll){
-            std::cout << ll;
-            return 0;
-        }
-
-        virtual int write_d(double d){
-            std::cout << d;
-            return 0;
-        }
-
-        virtual int write_p(const void* p){
-            std::cout << p;
             return 0;
         }
 
@@ -222,45 +170,11 @@ namespace elog{
              return swap(l);
         }
 
-        const logger& operator << (char c) const{
+       
+        template<class T>
+        const logger& operator << (const T& t) const{
             if(m_os)
-                *m_os << c;
-            return *this;
-        }
-
-        const logger& operator << (int i) const{
-            if(m_os)
-                *m_os << i;
-            return *this;
-        }
-
-        const logger& operator << (long l) const{
-            if(m_os)
-                *m_os << l;
-            return *this;
-        }
-
-        const logger& operator << (long long ll) const{
-            if(m_os)
-                *m_os << ll;
-            return *this;
-        }
-
-        const logger& operator << (void* p) const{
-            if(m_os)
-                *m_os << p;
-            return *this;
-        }
-
-        const logger& operator << (double d) const{
-            if(m_os)
-                *m_os << d;
-            return *this;
-        }
-
-        const logger& operator << (const std::string& s) const{
-            if(m_os)
-                *m_os << s;
+                *m_os << t;
             return *this;
         }
 

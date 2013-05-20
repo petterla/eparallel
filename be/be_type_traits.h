@@ -125,14 +125,14 @@ namespace	be{
 	};
 
 	template<>
-	struct	is_pod<s64>{
+	struct	is_pod<long long>{
 		typedef	true_type	value_type;
 		enum{
 			value	=	value_type::value,
 		};
 	};
 	template<>
-	struct	is_pod<u64>{
+	struct	is_pod<unsigned long long>{
 		typedef	true_type	value_type;
 		enum{
 			value	=	value_type::value,

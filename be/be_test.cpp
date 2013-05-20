@@ -24,7 +24,7 @@ using	namespace	be;
 be::THREADHANDLE g_threads[256]	=	{0};
 bool		g_run		=	false;
 int		g_thnum		=	0;
-volatile	long	g_alloc		=	0;
+volatile	s32	g_alloc		=	0;
 //lock_free_list<int>	g_lflist;
 struct p_node 
 {
@@ -43,7 +43,7 @@ ULONG	run_process	(void*)
 
 	//LONGLONG		QPart1,QPart2;
 	//double			dfMinus, dfFreq, dfTim; 
-	long	sz	=	0;
+	s32	sz	=	0;
 #ifdef	_WIN32
 	LARGE_INTEGER	fre;
 	LARGE_INTEGER	cnt, prevcnt;
@@ -56,7 +56,7 @@ ULONG	run_process	(void*)
 	p_node*	pv	=	0,*pv1	=	0,*pvt	=	0;
 	while(g_run)
 	{
-		const	long	sz	=	8;
+		const	s32	sz	=	8;
 		pv	=	(p_node*)alloc::allocate(sz);
 
 		if(pv){
@@ -130,7 +130,7 @@ static	zmem_pool	g_zmem_pool(8);
 ULONG	zallocrun_process	(void*)
 {
 	__int64	i	=	0;
-	long	sz	=	0;
+	s32	sz	=	0;
 
 #ifdef	_WIN32
 	LARGE_INTEGER	fre;
@@ -144,7 +144,7 @@ ULONG	zallocrun_process	(void*)
 	p_node*	pv	=	0,*pv1	=	0,*pvt	=	0;
 	while(g_run)
 	{
-		//const	long	sz	=	8;
+		//const	s32	sz	=	8;
 		pv	=	(p_node*)g_zmem_pool.allocate();
 
 		if(pv){
@@ -218,7 +218,7 @@ ULONG	swpallocrun_process	(void*)
 	__int64	i	=	0;
 
 
-	long	sz	=	0;
+	s32	sz	=	0;
 
 #ifdef	_WIN32
 	LARGE_INTEGER	fre;
@@ -232,7 +232,7 @@ ULONG	swpallocrun_process	(void*)
 	p_node*	pv	=	0,*pv1	=	0,*pvt	=	0;
 	while(g_run)
 	{
-		//const	long	sz	=	8;
+		//const	s32	sz	=	8;
 		pv	=	(p_node*)g_swpmem_pool.allocate();
 
 		if(pv){

@@ -57,9 +57,9 @@ public:
 			}
 
 			assert(newinfo.head);
-		}while(atomic_compare_exchange64((volatile	long	long*)&m_info,
-			*(long	long*)&newinfo,	*(long	long*)&oldinfo)	
-			!=	*(long	long*)&oldinfo);
+		}while(atomic_compare_exchange64((volatile	s64*)&m_info,
+			*(s64*)&newinfo,	*(s64*)&oldinfo)	
+			!=	*(s64*)&oldinfo);
 		if(oldinfo.tail){
 			((node*)oldinfo.tail)->next	=	nod;
 		}
@@ -86,9 +86,9 @@ public:
 				newinfo.head	=	NULL;
 				newinfo.tail	=	NULL;
 			}
-		}while(atomic_compare_exchange64((volatile	long	long*)&m_info,
-			*(long	long*)&newinfo,	*(long	long*)&oldinfo)
-				!=	*(long	long*)&oldinfo);
+		}while(atomic_compare_exchange64((volatile	s64*)&m_info,
+			*(s64*)&newinfo,	*(s64*)&oldinfo)
+				!=	*(s64*)&oldinfo);
 		if(nod){
 			t	=	nod->val;
 			node_allocator::deallocate(nod);
@@ -118,9 +118,9 @@ public:
 				newinfo.head	=	NULL;
 				newinfo.tail	=	NULL;
 			}
-		}while(atomic_compare_exchange64((volatile	long	long*)&m_info,
-			*(long	long*)&newinfo,	*(long	long*)&oldinfo)
-			!=	*(long	long*)&oldinfo);
+		}while(atomic_compare_exchange64((volatile	s64*)&m_info,
+			*(s64*)&newinfo,	*(s64*)&oldinfo)
+			!=	*(s64*)&oldinfo);
 		if(nod){
 			node_allocator::deallocate(nod);
 			ret	=	true;

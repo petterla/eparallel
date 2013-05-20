@@ -11,7 +11,7 @@ namespace zvm{
 		}
 
 		while (be::atomic_compare_exchange32(
-			(volatile long*)&m_owner, par, 0) != 0);
+			(volatile s32*)&m_owner, par, 0) != 0);
 		assert(m_cnt == 0);
 		++m_cnt;
 
@@ -26,7 +26,7 @@ namespace zvm{
 
 		--m_cnt;
 		if(!m_cnt){
-			be::atomic_exchange32((volatile	long*)&m_owner, 0);
+			be::atomic_exchange32((volatile	s32*)&m_owner, 0);
 		}
 
 		return	0;
@@ -43,7 +43,7 @@ namespace zvm{
 		}
 
 		if(be::atomic_compare_exchange32(
-			(volatile long*)&m_owner, par, 0) == 0){
+			(volatile s32*)&m_owner, par, 0) == 0){
 			assert(m_cnt == 0);
 			++m_cnt;
 			return	0;		
@@ -62,7 +62,7 @@ namespace zvm{
 
 		--m_cnt;
 		if(!m_cnt){
-			be::atomic_exchange32((volatile	long*)&m_owner,	0);
+			be::atomic_exchange32((volatile	s32*)&m_owner,	0);
 		}
 
 		return	0;
@@ -72,7 +72,7 @@ namespace zvm{
 	s32	spin_lock::lock(s32 par){
 
 		while (be::atomic_compare_exchange32(
-			(volatile long*)&m_flag, 1, 0) != 0);
+			(volatile s32*)&m_flag, 1, 0) != 0);
 
 		return	0;
 
@@ -81,7 +81,7 @@ namespace zvm{
 	s32	spin_lock::unlock(s32 par){
 
 		if(be::atomic_compare_exchange32(
-			(volatile long*)&m_flag, 0, 1) == 1){
+			(volatile s32*)&m_flag, 0, 1) == 1){
 			return	0;
 		}
 
@@ -92,7 +92,7 @@ namespace zvm{
 	s32	spin_lock::try_lock(s32 par){
 
 		if(be::atomic_compare_exchange32(
-			(volatile long*)&m_flag, 1, 0) == 0){
+			(volatile s32*)&m_flag, 1, 0) == 0){
 			return	0;		
 		}
 
@@ -103,7 +103,7 @@ namespace zvm{
 	s32 spin_lock::try_unlock(s32 par){
 
 		if(be::atomic_compare_exchange32(
-			(volatile long*)&m_flag, 0, 1) == 1){
+			(volatile s32*)&m_flag, 0, 1) == 1){
 			return	0;
 		}
 
