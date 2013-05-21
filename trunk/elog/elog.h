@@ -34,6 +34,9 @@ namespace elog{
     std::string get_str_hour(time_t n);
     std::string get_str_minute(time_t n); 
     std::string get_str_time_and_pid(time_t n);
+    time_t get_minute_timestamp(time_t n);
+    time_t get_hour_timestamp(time_t n);
+    time_t get_day_timestamp(time_t n);
 
     class appender{
     public:
