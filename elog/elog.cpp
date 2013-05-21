@@ -56,6 +56,30 @@ std::string get_str_time_and_pid(time_t n){
 
 }
 
+time_t get_minute_timestamp(time_t n){                                                                                
+    struct tm t;                                                                                                      
+    t = *(localtime(&n));                                                                                             
+    t.tm_sec = 0;                                                                                                     
+    return mktime(&t);                                                                                                
+}                                                                                                                     
+                                                                                                                      
+time_t get_hour_timestamp(time_t n){                                                                                  
+    struct tm t;                                                                                                      
+    t = *(localtime(&n));                                                                                             
+    t.tm_min = 0;                                                                                                     
+    t.tm_sec = 0;                                                                                                     
+    return mktime(&t);                                                                                                
+}                                                                                                                     
+                                                                                                                      
+time_t get_day_timestamp(time_t n){                                                                                   
+    struct tm t;                                                                                                      
+    t = *(localtime(&n));                                                                                             
+    t.tm_hour = 0;                                                                                                    
+    t.tm_min = 0;                                                                                                     
+    t.tm_sec = 0;                                                                                                     
+    return mktime(&t);                                                                                                
+}
+
 log::log(){
 	be::be_mutex_init(&m_cs);
 }
@@ -408,20 +432,23 @@ fileappender::~fileappender(){
 
 int fileappender::take(){
     time_t n = time(NULL);
-    
+    time_t t = 0;
     if(difftime(n, m_last_open_time) >= m_schedu_span){
         //open new file
         std::string filename;
         switch(m_schedu_span){
         case MINUTE:
             filename = m_path + "_" + get_str_minute(n) + ".log";
+            t = get_minute_timestamp(n);
             break;
         case HOUR:
             filename = m_path + "_" + get_str_hour(n) + ".log";
+            t = get_hour_timestamp(n);
             break;
         case DAY:
         default:
             filename = m_path + "_" + get_str_day(n) + ".log";
+            t = get_day_timestamp(n);
             break;
         }
 		be::be_mutex_take(&m_cs);
@@ -429,7 +456,7 @@ int fileappender::take(){
             fclose(m_file);
         }
         m_file = fopen(filename.c_str(), "ab+"); 
-        m_last_open_time = n;
+        m_last_open_time = t;
         be::be_mutex_give(&m_cs);
     }
 	be::atomic_decrement32(&m_refcnt);
