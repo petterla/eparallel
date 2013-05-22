@@ -105,6 +105,10 @@ int log::init(const std::string& config){
         if(ret < 0){
             std::cout << "log <config:" << config << "> load loggers fail\n";
         }
+        ret = load_default_logger(config, m_appends, m_default_logger);
+        if(ret < 0){
+            std::cout << "log <config:" << config << "> load default logger fail\n";
+        }
     }while(0);
     m_config = config;
     be::be_mutex_give(&m_cs);
@@ -137,9 +141,16 @@ int log::reload(const std::string& config){
             std::cout << "reload log <config:" << conf << "> load loggers fail\n";
             break;
         }
+        log_t defl;
+        ret = load_default_logger(conf, apps, defl);
+		if(ret < 0){
+			std::cout << "reload log <config:" << conf << "> load loggers fail\n";
+			break;
+		}
         be::be_mutex_take(&m_cs);
         apps.swap(m_appends);
         lgs.swap(m_logs);
+        m_default_logger = defl;
         m_config = conf;
         be::be_mutex_give(&m_cs);
     }while(0); 
@@ -203,6 +214,7 @@ int log::load_appenders(const std::string& conf, appenders& apps){
             
 	    const char* fileapd = type_file_appender;
 	    const char* consoleapd = type_console_appender;
+            const char* nullapd = type_null_appender;
 
 	    if(strncasecmp(type, fileapd, strlen(fileapd)) == 0){
 		const char* path = NULL;
@@ -244,6 +256,10 @@ int log::load_appenders(const std::string& conf, appenders& apps){
 	        apps[name] = new consoleappender;
 		std::cout << "log <config:" << conf << "> load <appender:"
                      << name << "> <type:ConsoleAppender>\n";
+            }else if(strncasecmp(type, nullapd, strlen(nullapd)) == 0){
+	        apps[name] = new nullappender;
+		std::cout << "log <config:" << conf << "> load <appender:"
+                     << name << "> <type:NullAppender>\n";
 	    }else{
 		std::cout << "log <config:" << conf << "> unsupport <appender:"
                      << name << "> <type:" << type << ">\n";
@@ -352,6 +368,82 @@ int log::load_loggers(const std::string& conf, const appenders& apps, loggers& l
     config_init(&cfg);
     return ret;
 }
+int log::load_default_logger(const std::string& conf, const appenders& apps, log_t& lg){
+    config_t cfg;
+    
+    int ret = 0;
+    
+    config_init(&cfg);
+
+    do{
+        ret = config_read_file(&cfg, conf.c_str());
+        if(ret != CONFIG_TRUE){
+            std::cout << "log <config:" << conf << "> read file fail\n"; 
+            ret = -1;
+            break;
+        } 
+   
+        config_setting_t* logger = config_lookup(&cfg, "default_logger");
+        if(!logger){
+            std::cout << "log <config:" << conf << "> has no default logger\n"; 
+            break;
+        }
+
+        int t = LOG_TYPE_NORMAL;
+        const char* type = NULL;
+        config_setting_lookup_string(logger, "type", &type);
+        if(type){
+	    if(strncasecmp(type, "BINLOG", 6) == 0){
+	        t = LOG_TYPE_BINLOG;
+	    } 
+        }
+        int l = LOG_LEVEL_NOT; 
+        const char* level = NULL;
+        config_setting_lookup_string(logger, "level", &level);
+        if(level){
+            if(strncasecmp(level, "NOT", 3) == 0){
+                l = LOG_LEVEL_NOT;
+            }else if(strncasecmp(level, "ALL", 3) == 0){
+	        l = LOG_LEVEL_ALL;
+            }else if(strncasecmp(level, "DEBUG", 5) == 0){
+	        l = LOG_LEVEL_DEBUG;
+	    }else if(strncasecmp(level, "TRACE", 5) == 0){
+	        l = LOG_LEVEL_TRACE;
+	    }else if(strncasecmp(level, "INFO", 4) == 0){
+	        l = LOG_LEVEL_INFO;
+	    }else if(strncasecmp(level, "WARN", 4) == 0){
+	        l = LOG_LEVEL_WARN;
+	    }else if(strncasecmp(level, "ERROR", 5) == 0){
+	        l = LOG_LEVEL_ERROR;
+	    }
+        }
+
+        const char* append= NULL; 
+        config_setting_lookup_string(logger, "appender", &append);
+        if(!append){
+	    std::cout << "log <config:" << conf << "> get default_logger"
+	              " appender fail\n";
+	    ret = -1;
+	    break;
+        } 
+        lg.m_type = t; 
+        lg.m_level = l;
+        lg.m_appender = const_cast<appenders&>(apps)[append];
+        if(!lg.m_appender){
+	    std::cout << "log <config:" << conf << "> get default_logger"
+	              " <appender:" << append << "> is null\n"; 
+	    ret = -1;
+	    break;
+        }
+    
+        std::cout << "log <config:" << conf << "> load default_logger"
+	    " <appender:" << append << "> <level:"
+	    << level << ">\n"; 
+    }while(0);
+    config_init(&cfg);
+    return ret;
+}
+
 
 static const char* get_level_str(int level){
     switch(level){
@@ -385,11 +477,6 @@ int logger::set_header() const{
 
 int logger::write_to_appender(){
     if(m_type == LOG_TYPE_BINLOG){
-        //unsigned int s = m_os->str().size();
-        //std::string msg;
-        //s = htonl(s);
-        //msg.append((char*)&s, sizeof(s));
-        //msg.append(m_os->str().data(), m_os->str().size());
         m_append->write_s(m_os->str());
     }else{
         *m_os << '\n';
@@ -401,12 +488,16 @@ int logger::write_to_appender(){
 
 logger log::operator()(const std::string& logname, int level){
     logger lg;
-	be::be_mutex_take(&m_cs);
+    be::be_mutex_take(&m_cs);
     loggers::iterator itor = m_logs.find(logname);
     if(itor != m_logs.end()){
         log_t& l = itor->second;
         if(level >= l.m_level){
-            lg = logger(logname, l.m_type, l.m_level, l.m_appender);
+            lg = logger(logname, l.m_type, level, l.m_appender);
+        }
+    }else{
+        if(level >= m_default_logger.m_level){
+            lg = logger(logname, m_default_logger.m_type, level, m_default_logger.m_appender);
         }
     }
     be::be_mutex_give(&m_cs);
@@ -419,8 +510,8 @@ fileappender::fileappender(const std::string& path, int schedu_span,
     bool immediately_flush, int compress_type)
     :m_path(path), m_schedu_span(schedu_span), m_last_open_time(0),
     m_file(NULL), m_immediately_flush(immediately_flush),
-    m_compress_type(compress_type), m_refcnt(0){
-		be::be_mutex_init(&m_cs);
+    m_compress_type(compress_type){
+    be::be_mutex_init(&m_cs);
 }
 
 fileappender::~fileappender(){
@@ -428,6 +519,20 @@ fileappender::~fileappender(){
     be::be_mutex_destroy(&m_cs); 
     if(m_file)
         fclose(m_file);
+}
+
+int appender::take(){
+    be::atomic_increment32(&m_refcnt);
+    return 0;
+}
+
+int appender::give(){
+    be::atomic_decrement32(&m_refcnt);
+    if(m_refcnt < 1){
+        delete this;
+    }
+
+    return 0;
 }
 
 int fileappender::take(){
@@ -451,7 +556,7 @@ int fileappender::take(){
             t = get_day_timestamp(n);
             break;
         }
-		be::be_mutex_take(&m_cs);
+        be::be_mutex_take(&m_cs);
         if(m_file){
             fclose(m_file);
         }
@@ -459,7 +564,7 @@ int fileappender::take(){
         m_last_open_time = t;
         be::be_mutex_give(&m_cs);
     }
-	be::atomic_decrement32(&m_refcnt);
+    be::atomic_increment32(&m_refcnt);
     return 0;
 }
 
@@ -474,7 +579,7 @@ int log::uninit(){
 int log::free_appenders(appenders& apps){
     appenders::iterator itor = apps.begin();
     for(; itor != apps.end(); ++itor){
-        delete itor->second;
+        itor->second->give();
     }
     apps.clear();
     return 0;
@@ -482,11 +587,6 @@ int log::free_appenders(appenders& apps){
 
 int log::free_loggers(loggers& lgs){
     lgs.clear();
-    return 0;
-}
-
-int fileappender::give(){
-    be::atomic_increment32(&m_refcnt);
     return 0;
 }
 

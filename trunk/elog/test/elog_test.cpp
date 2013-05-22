@@ -74,19 +74,23 @@ int main(){
 
    elog::elog_debug("bin_logger") << s;
 
+   elog::elog_debug("use_default_logger") << "file test line:"
+            << "c:" << c << ",i:" << i << ",l:" << l << ",ll:" << ll 
+            << ",d" << d << ",p:" << p << ",s:" << s;
+
+
    elog::elog_debug("console_logger") << "sleep_ms(" << 3600 << ")";
    elog::sleep_ms(3600);
    elog::elog_debug("console_logger") << "sleep_ms(" << 3600 << ") finish";
-
-   const int pcnt = 100;
+   const int pcnt = 2;
    pthread_t pids[pcnt];
    for(int i = 0; i < pcnt; ++i){
        pthread_create(&pids[i], NULL, test_thread, NULL); 
    }   
    
-   sleep(5);
+   sleep(2);
    elog::elog_reload();
-   sleep(5);
+   sleep(2);
    g_run = false;
    for(int j = 0; j < pcnt; ++j){
        void* rt;

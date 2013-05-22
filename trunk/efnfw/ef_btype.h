@@ -1,9 +1,7 @@
 #ifndef EF_BTYPE_H
 #define EF_BTYPE_H
 
-
-
-namespace	ef{
+namespace ef{
 
 typedef unsigned long long  uint64;
 typedef long long           sint64;
@@ -20,7 +18,7 @@ typedef char                sint8;
 typedef char                int8;
 
 
-};//namespace ef
+}//namespace ef
 
 
 #endif

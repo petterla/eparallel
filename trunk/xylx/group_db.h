@@ -17,32 +17,27 @@ class g_connection:public ef::connection
 	{
 	public:
 		enum{
-
 			CHECK_TIMER	= 1,
-
 		};
 
 		g_connection(group_db	*db);
-		
 		~g_connection();
 
 		virtual	int32	on_create();
-
 		virtual	int32	handle_read();
-
 		virtual	int32	handle_timer(int32	id);
 
 	protected:
-
 	private:
-
+		int		m_msglen;
+		int		m_rcvlen;
+		std::string	m_buf;
 		group_db	*m_db;
-
+		time_t		m_last_time;
 		static	const char* tag;
 };
 
 class	g_con_factory:public ef::con_factory{
-	
 	public:
 		g_con_factory(group_db *gdb):m_gdb(gdb){
 
@@ -55,9 +50,7 @@ class	g_con_factory:public ef::con_factory{
 		virtual	connection*	create_connection();
 
 	private:
-
 		group_db	*m_gdb;
-
 };
 
 class	group_db{
@@ -71,15 +64,11 @@ class	group_db{
 		~group_db();
 		
 		ef::msg_queue* get_msg_queue(){
-
 			return	&m_msg_que;
-
 		}
 
 		ef::net_thread* get_net_thread(){
-
 			return	&m_net_thread;
-
 		}
 		
 		int	run();

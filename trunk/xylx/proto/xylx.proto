@@ -6,9 +6,15 @@ enum Command{
    INTEREST_RESP = 1004;  
 };
 
+enum Status{
+   SUCCESS = 0;
+   DB_FAIL = 101;
+};
+
 message Person{
    required string phone = 1;
    optional string name = 2;
+   optional string message = 3;
 }
 
 message GetCharmRequest{
@@ -18,12 +24,13 @@ message GetCharmRequest{
 
 message GetCharmRespone{
    required int32 charm_mark = 1;
-   repeated Person instert_person = 2;
+   repeated Person interest_person = 2;
 }
 
 message InterestRequest{
    required string phone = 1;
-   optional string message = 2;   
+   optional string name = 2;
+   optional string message = 3;   
 }
 
 message InterestRespone{
