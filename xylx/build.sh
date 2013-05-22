@@ -1,4 +1,4 @@
 #!/bin/bash
 
 
-protoc --cpp_out=. proto/xylx.proto
+protoc --cpp_out=. -I=proto proto/xylx.proto

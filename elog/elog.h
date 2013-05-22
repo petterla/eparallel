@@ -14,6 +14,7 @@ namespace elog{
 
     #define type_file_appender  "FileAppender"
     #define type_console_appender  "ConsoleAppender"
+    #define type_null_appender  "NullAppender"
 
     enum{
         LOG_LEVEL_ALL = 0,
@@ -40,7 +41,7 @@ namespace elog{
 
     class appender{
     public:
-        appender(){
+        appender():m_refcnt(1){
         }
 
         virtual ~appender(){
@@ -50,15 +51,12 @@ namespace elog{
             return 0;
         }
 
-	virtual int take(){
-            //cout time
-            return 0;
-        }
+	virtual int take();
+        //if refcnt < 1 ,delete   
+	virtual int give();
 
-	virtual int give(){
-            return 0;
-        }
-
+    protected:
+        volatile be::s32 m_refcnt;
 
     private:
         appender(const appender&);
@@ -67,15 +65,6 @@ namespace elog{
 
     class consoleappender:public appender{
     public:
-	virtual int take(){
-            //cout time
-            return 0;
-        }
-
-	virtual int give(){
-            return 0;
-        }
-
 	virtual int write_s(const std::string& s){
             std::cout << s;
             return 0;
@@ -83,6 +72,14 @@ namespace elog{
 
     };
 
+    class nullappender:public appender{
+    public:
+
+	virtual int write_s(const std::string& s){
+            return 0;
+        }
+
+    };
 
     class fileappender:public appender{
     public:
@@ -101,17 +98,15 @@ namespace elog{
                      int compress_type = 0);
         virtual ~fileappender();
         virtual int take();
-        virtual int give();
         virtual int write_s(const std::string& s);
     private:
-		be::MUTEX m_cs;
+        be::MUTEX m_cs;
         std::string m_path;
         int m_schedu_span;
         time_t m_last_open_time; 
         FILE* m_file;
         bool m_immediately_flush;
         int m_compress_type;
-		volatile be::s32 m_refcnt;
     };
 
 
@@ -126,7 +121,7 @@ namespace elog{
                 m_os(NULL){
             if(p){
                 p->take();
-                m_os = new std::stringstream;
+	        m_os = new std::stringstream;
             }
         }
 
@@ -216,13 +211,15 @@ namespace elog{
 
         static int load_appenders(const std::string& conf, appenders& apps);
         static int load_loggers(const std::string& conf, const appenders& apps, loggers& lgs);
+        static int load_default_logger(const std::string& conf, const appenders& apps, log_t& l);
         static int free_appenders(appenders& apps);
         static int free_loggers(loggers& lgs);
 
-		be::MUTEX m_cs;
+        be::MUTEX m_cs;
         std::string m_config;
         loggers m_logs;
         appenders m_appends;
+        log_t m_default_logger;
     };
 
     int elog_init(const std::string& config);

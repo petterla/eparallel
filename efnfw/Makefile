@@ -14,11 +14,11 @@ be_src = ../be/
 
 obj = $(ROOT)/obj
 dbgobj = $(ROOT)/dbgobj
-dst = $(ROOT)/bin
-libdst = $(ROOT)/bin
+dst = $(ROOT)/lib
+libdst = $(ROOT)/lib
 
 bin = $(dst)/$(BINNAME)
-solib = $(ROOT)/bin
+solib = $(ROOT)/lib
 
 
 #################################################################

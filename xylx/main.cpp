@@ -35,8 +35,9 @@ static void signal_handler(int sig)
 int	main(int argc,char** argv)
 {
 
-	if(argc < 2){
-		printf("you must input at list 1 argu. please input listen port!\n");
+	if(argc < 3){
+		printf("you must input at list 3 argu. please input listen port!\n"
+			"xylx <port> <elog.conf>");
 		return	0;
 	}
 
@@ -47,10 +48,9 @@ int	main(int argc,char** argv)
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGHUP,  signal_handler); /* catch hangup signal */
 	signal(SIGTERM, signal_handler); /* catch kill signal */
-	signal(SIGINT,	signal_handler);
 
 	group::group_db	db(atoi(argv[1]), 10);
-	elog::elog_init("elog.conf");
+	elog::elog_init(argv[2]);
 	g_pdb	=	&db;
 	db.run();
 	while(g_run){

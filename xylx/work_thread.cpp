@@ -8,9 +8,9 @@ namespace	group{
 
 	work_thread::work_thread(group_db *db,
 		const char* host, const char* user, 
-		const char* passwd, int32 port, const char* db)
+		const char* passwd, int32 port, const char* database)
 		:m_db(db), m_host(host), m_user(user), 
-		m_passwd(passwd), m_port(port), m_dbtabase(db)
+		m_passwd(passwd), m_port(port), m_dbtabase(database)
 	{
 
 
@@ -44,7 +44,7 @@ namespace	group{
 	int32	work_thread::init(){
                 int32 ret = 0;
 		elog::elog_error(tag) <<  "work_thread:" << this << " init!";
-		ret = m_mysql.init(m_dbhost, m_user, m_passwd, m_dbtabase, m_port);
+		ret = m_mysql.init(m_host, m_user, m_passwd, m_dbtabase, m_port);
 		if(ret < 0){
 			elog::elog_error(tag) <<  "work_thread:" << this << " initi mysql fail!";
 			return	-1;
