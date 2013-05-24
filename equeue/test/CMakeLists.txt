@@ -1,0 +1,8 @@
+project(elog)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+set(SRC_LIST  elog_test.cpp)
+include_directories(../)
+set(LIBRARY_OUTPUT_PATH lib)
+add_definitions("-Wall -g -pg")
+link_libraries(pthread config)
+add_executable(elog_test ${SRC_LIST})
