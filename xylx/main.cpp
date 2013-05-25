@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include "elog.h"
 
 group::group_db	*g_pdb = NULL;
 int	g_run = 1;
@@ -35,9 +34,9 @@ static void signal_handler(int sig)
 int	main(int argc,char** argv)
 {
 
-	if(argc < 3){
-		printf("you must input at list 3 argu. please input listen port!\n"
-			"xylx <port> <elog.conf>");
+	if(argc < 2){
+		printf("you must input at list 2 argu. please input config file!\n"
+			"xylx <db.conf>");
 		return	0;
 	}
 
@@ -49,15 +48,17 @@ int	main(int argc,char** argv)
 	signal(SIGHUP,  signal_handler); /* catch hangup signal */
 	signal(SIGTERM, signal_handler); /* catch kill signal */
 
-	group::group_db	db(atoi(argv[1]), 10);
-	elog::elog_init(argv[2]);
+	group::group_db	db;
 	g_pdb	=	&db;
+	if(db.init(argv[1]) < 0){
+		return	-1;
+	}
 	db.run();
 	while(g_run){
 		sleep(1);
 	}
 	db.stop();
-	elog::elog_uninit();
+	db.uninit();
 	printf("groupdb stop\n");
 	
 	return	0;

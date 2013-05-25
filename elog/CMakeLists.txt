@@ -1,4 +1,5 @@
 project(elog)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 add_definitions("-Wall -g")
 include_directories(${PROJECT_SOURCE_DIR}/../be)
 link_directories(../../be/lib)

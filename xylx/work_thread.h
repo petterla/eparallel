@@ -12,15 +12,17 @@ using namespace ef;
 
 	class	work_thread{
 	public:
-		work_thread(group_db *db,
-			const char* host = "", const char* user = "", 
-			const char* passwd = "" , int32 port = 0, 
-			const char* database = "");
-
+		work_thread(group_db *db);
 		
 		~work_thread();
 
-		int32	init();
+		int32	init(const char* host = "", 
+				int port = 3306,
+				const char* user = "", 
+				const char* passwd = "" , 
+				const char* database = "");
+
+
 		int32	clear();
 		int32	run();
 		ma::adapter& mysql_adapter(){
