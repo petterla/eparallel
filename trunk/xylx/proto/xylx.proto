@@ -29,8 +29,9 @@ message GetCharmRespone{
 
 message InterestRequest{
    required string phone = 1;
-   optional string name = 2;
-   optional string message = 3;   
+   required string to_phone = 2;
+   optional string name = 3;
+   optional string message = 4;   
 }
 
 message InterestRespone{
