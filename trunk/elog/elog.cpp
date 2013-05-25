@@ -93,7 +93,7 @@ int log::init(const std::string& config){
 
     int ret = 0;
     
-	be::be_mutex_take(&m_cs);    
+    be::be_mutex_take(&m_cs);    
     do{
         ret = load_appenders(config, m_appends); 
         if(ret < 0){

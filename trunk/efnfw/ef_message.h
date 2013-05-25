@@ -22,21 +22,19 @@ class	message{
 		bool	is_null() const;
 
 		uint32	con_id() const{
-
 			return	m_conid;
+		}
 
+		const std::string& msg() const{
+			return	m_msg;
 		}
 
 		const char* get_msg() const{
-
 			return	m_msg.c_str();
-
 		}
 
 		size_t	get_msg_len() const{
-
 			return	m_msg.length();
-
 		}
 
 		int32	respone(const std::string &str) const;
@@ -61,9 +59,7 @@ class	message{
 		};
 		
 		net_thread	*m_thr;
-
 		uint32	m_conid;
-
 		std::string	m_msg;
 
 };

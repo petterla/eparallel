@@ -35,32 +35,28 @@ class g_connection:public ef::connection
 		group_db	*m_db;
 		time_t		m_last_time;
 		static	const char* tag;
+
 };
 
 class	g_con_factory:public ef::con_factory{
 	public:
 		g_con_factory(group_db *gdb):m_gdb(gdb){
-
 		}
 
 		~g_con_factory(){
-
 		}
-
 		virtual	connection*	create_connection();
-
 	private:
 		group_db	*m_gdb;
 };
 
 class	group_db{
 	public:
-
 		enum{
 			GROUP_DB_MAX_THREAD = 512
 		};
 		
-		group_db(int listen_port, int workthreadcnt);
+		group_db();
 		~group_db();
 		
 		ef::msg_queue* get_msg_queue(){
@@ -68,22 +64,32 @@ class	group_db{
 		}
 
 		ef::net_thread* get_net_thread(){
-			return	&m_net_thread;
+			return	m_net_thread;
 		}
 		
 		int	run();
 		int	stop();
 
+		int	init(const std::string& conf);
+		int	uninit();		
+	
 		static	void* net_thread_process(void*);
 		static	void* work_thread_process(void*);
 		
 	private:
 		int	m_port;
 		int	m_workthreadcnt;
-		g_con_factory m_con_factory;
-		ef::acceptor m_accpet;
+		const char* m_db_host;
+		int	m_db_port;
+		const char* m_user;
+		const char* m_password;
+		const char* m_database;
+		const char* m_logconf;
+		std::string m_conf;
+		g_con_factory* m_con_factory;
+		ef::acceptor* m_accept;
 		ef::msg_queue m_msg_que;
-		ef::net_thread	m_net_thread;
+		ef::net_thread*	m_net_thread;
 		be::THREADHANDLE m_net_thread_handle;
 		work_thread *m_work_threads[GROUP_DB_MAX_THREAD];
 		be::THREADHANDLE m_work_thread_handles[GROUP_DB_MAX_THREAD];

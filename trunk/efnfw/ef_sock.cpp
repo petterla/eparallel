@@ -16,7 +16,45 @@
 #include <cassert>
 #include <string.h>
 
+SOCKET tcp_connect(char * dsthost, int dstport, char * localip, int localport)
+{
+	SOCKET fd;
+	int ret;
+	struct sockaddr_in cli; 
+	int err;
 
+	int reuseaddr = 1;
+	int keepalive = 1;
+	//int sendbuf = 300 * 1024;
+	//int recvbuf = 300 * 1024;
+
+
+	fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+	if (fd == INVALID_SOCKET) {
+		return INVALID_SOCKET;
+	}
+
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuseaddr, sizeof(reuseaddr));
+	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (char *)&keepalive, sizeof(keepalive));
+
+
+	cli.sin_family = AF_INET;
+	cli.sin_addr = sock_get_hostip(dsthost);
+	cli.sin_port = htons(dstport);
+
+	ret = connect(fd, (struct sockaddr *)&cli, sizeof(struct sockaddr));
+
+	if (ret != 0) {
+		err = sock_errno;
+		if (err != SOCK_EINPROGRESS && err != SOCK_EWOULDBLOCK) {
+			closesocket(fd);
+			return INVALID_SOCKET;
+		}
+	}
+
+	return fd;
+}
 /*
 * consucc 取两个值 -1 失败； 0 连接成功, 连接成功包括阻塞
 * 如果 返回值为 INVALID_SOKCET 表示彻底失败
