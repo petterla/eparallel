@@ -74,18 +74,28 @@ int processor::handle_get_charm_req(const Request& req, Response& resp, void* pa
     }
     os.str("");
     os << "select `to_phone` from xylx.interest_t where `from_phone` = '"
-        << req.get_charm_req().phone() << ";";
+        << req.get_charm_req().phone() << "';";
     ret = t->mysql_adapter().query(os.str(), rest);
     if(ret < 0){
         resp.set_status(DB_FAIL);
         return 0;
     }
     os.str("");
+    row = rest.fetch_row();
+    if(!row){
+        return 0;
+    }
     os << "select `from_phone`,`from_name`,`message` from"
          " xylx.interest_t where `to_phone` = '"
         << req.get_charm_req().phone() << "' and `from_phone` in(";
-    while((row = rest.fetch_row())){
-        os << "'" << row[0] << "',"; 
+    while(row){
+        os << "'" << row[0]; 
+        row = rest.fetch_row();
+        if(row){
+            os << "','";
+        }else{
+            os << "'";
+        }
     }
     os << ");";
     ret = t->mysql_adapter().query(os.str(), rest);
@@ -113,7 +123,8 @@ int processor::handle_interest_req(const Request& req, Response& resp, void* par
     os << "insert into xylx.interest_t (`from_phone`, `from_name`,"
           " `message`, `to_phone`) value ('"
         << req.interest_req().phone() << "','" << req.interest_req().name()
-        << "','" << req.interest_req().message() << "');";
+        << "','" << req.interest_req().message() << "','" 
+        << req.interest_req().to_phone() << "');";
     ret = t->mysql_adapter().update(os.str());
     if(ret <= 0){
         resp.set_status(DB_FAIL);
