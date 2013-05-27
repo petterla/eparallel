@@ -4,6 +4,7 @@
 #include "ef_common.h"
 #include "ef_sock.h"
 #include "ef_timer.h"
+#include "ef_loop_buf.h"
 #include <string>
 #include <list>
 
@@ -18,7 +19,6 @@ class	connection{
 		virtual	~connection();
 
 		int32	set_notify(int32 noti);
-
 		int32	get_notify(){
 			return	m_noti;
 		}
@@ -30,18 +30,28 @@ class	connection{
 		virtual	int32	handle_read();
 		virtual	int32	handle_write();
 		virtual	int32	handle_timer(int32 id);
-		virtual	int32	handle_pack(const char* buf, int len);
+		virtual	int32	handle_pack();
 		virtual	int32	recycle();
 		virtual	int32	on_create();
 
 		//when recv buf is more than len,call handle_pack
-		int32	notify_recv(int len);
+		int32	notify_pack(int32 len){
+			m_noti_len = len;
+			return	0;
+		}
+
 		//peek from recv buf
-		int32	peek_buf(char* out, int outlen);
+		int32	peek_buf(char* out, int32 outlen){
+			return	m_buf.peek((uint8*)out, outlen);
+		}
 		//read from recv buf
-		int32	read_buf(char* out, int outlen);
+		int32	read_buf(char* out, int32 outlen){
+			return	m_buf.read((uint8*)out, outlen);
+		}
 		//recv buf len
-		int32	buf_len();
+		int32	buf_len(){
+			return	m_buf.size();
+		}
 
 		void	set_fd(SOCKET fd){
 			m_fd = fd;
@@ -93,7 +103,8 @@ class	connection{
 		struct in_addr	m_addr;
 		int32	m_port;
 		
-		char*		m_recv_buf;
+		int32		m_noti_len;
+		loop_buf	m_buf;
 		std::list<timer>	m_timers;
 		std::list<std::string>	m_msgs;
 		uint32	m_cur_msg_start;

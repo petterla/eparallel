@@ -27,21 +27,21 @@ extern "C" {
 #include <linux/wireless.h>
 
 /* in Windows Socket, nonblocking operation results are identified by WSAEWOULDBLOCK */
-#define SOCK_EINPROGRESS             EINPROGRESS      
-#define SOCK_EWOULDBLOCK	         EWOULDBLOCK
-#define SOCK_EAGAIN					 EAGAIN
-#define SOCK_EINTR                   EINTR
-#define SOCK_EBADF			         EBADF
-#define SOCK_EINVAL                  EINVAL
-#define SOCK_ENOTSOCK                ENOTSOCK
+#define SOCK_EINPROGRESS		EINPROGRESS      
+#define SOCK_EWOULDBLOCK		EWOULDBLOCK
+#define SOCK_EAGAIN			EAGAIN
+#define SOCK_EINTR			EINTR
+#define SOCK_EBADF			EBADF
+#define SOCK_EINVAL			EINVAL
+#define SOCK_ENOTSOCK			ENOTSOCK
 
-#define sock_errno					 errno
+#define sock_errno			errno
 
-#define sock_close					close
+#define sock_close			close
 
-#define closesocket					close
+#define closesocket			close
 
-#define SOCKET_ERROR				(-1)
+#define SOCKET_ERROR			(-1)
 
 typedef	int	SOCKET;
 
@@ -57,17 +57,17 @@ int sock_is_valid (SOCKET fd);
 #include <Iphlpapi.h>
 
  /* in Windows Socket, nonblocking operation results are identified by WSAEWOULDBLOCK */
-#define SOCK_EINPROGRESS             WSAEWOULDBLOCK     
-#define SOCK_EWOULDBLOCK	         WSAEWOULDBLOCK
-#define SOCK_EAGAIN					 WSAEWOULDBLOCK
-#define SOCK_EINTR                   WSAEINTR
-#define SOCK_EBADF			         WSAEBADF
-#define SOCK_EINVAL                  WSAEINVAL
-#define SOCK_ENOTSOCK                WSAENOTSOCK
+#define SOCK_EINPROGRESS		WSAEWOULDBLOCK     
+#define SOCK_EWOULDBLOCK		WSAEWOULDBLOCK
+#define SOCK_EAGAIN			WSAEWOULDBLOCK
+#define SOCK_EINTR			WSAEINTR
+#define SOCK_EBADF			WSAEBADF
+#define SOCK_EINVAL			WSAEINVAL
+#define SOCK_ENOTSOCK			WSAENOTSOCK
 
-#define sock_errno					 WSAGetLastError()
+#define sock_errno			WSAGetLastError()
 
-#define sock_close					closesocket
+#define sock_close			closesocket
 
 #endif /*if WINDOWS*/
 
