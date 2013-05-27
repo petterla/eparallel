@@ -39,7 +39,26 @@ int32	connection::clear(){
 
 
 int32	connection::handle_read(){
-	uint32	ret = 0;
+	int32	ret = 0;
+	char	tmpbuf[16 * 1024];
+	int32	actrcv = 0;
+	while(true){
+		actrcv = 0;
+		ret = tcp_nb_receive(m_fd, tmpbuf, sizeof(tmpbuf), &actrcv);
+		if(ret < 0){
+			return	ret;
+		}
+		if(m_buf.size() + actrcv > m_buf.capacity()){
+			m_buf.resize(m_buf.capacity() + actrcv);
+			m_buf.write((uint8*)tmpbuf, actrcv);	
+		}
+		if(m_buf.size() >= m_noti_len){
+			ret = handle_pack();
+		}
+		if(ret < 0){
+			return	ret;
+		}
+	}
 	
 	return	ret;
 }
@@ -57,7 +76,8 @@ int32	connection::on_create(){
 }
 	
 connection::connection(SOCKET fd, uint32 id)
-	:m_fd(fd),m_id(id),m_thread(NULL),m_noti(0),
+	:m_fd(fd),m_id(id),m_thread(NULL),
+	m_noti(0),m_noti_len(0),m_buf(1024*1024),
 	m_cur_msg_start(0)
 {
 
@@ -88,7 +108,6 @@ int32	connection::set_notify(int32 noti){
 }
 
 int32	connection::find_del_timer(int32 id, timer &tm){
-		
 	std::list<timer>::iterator itor = m_timers.begin();
 	for(; itor != m_timers.end(); ++itor){
 		if(itor->get_id() == id){
@@ -97,9 +116,7 @@ int32	connection::find_del_timer(int32 id, timer &tm){
 			return	0;
 		}
 	}
-
 	return	-1;
-
 }
 
 int32	connection::start_timer(int32 id, int32 timeout){
@@ -117,7 +134,6 @@ int32	connection::start_timer(int32 id, int32 timeout){
 	timer	tm1(this, id, tv);
 	m_thread->add_timer(tm1);
 	m_timers.push_back(tm1);
-
 	return	0;
 }
 

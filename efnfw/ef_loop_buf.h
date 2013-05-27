@@ -7,23 +7,24 @@ namespace	ef{
 
 class	loop_buf{
 	public:
-
-		loop_buf(uint32	cap = 8192);
-
+		loop_buf(int32	cap = 8192);
 		~loop_buf();
 
-		uint32	capacity();
-		uint32	resize(uint32 cap);
-		uint32	read(uint8	*buf, uint32 len);
-		uint32	write(const uint8	*buf, uint32 len);
-		uint32	peek(uint8	*buf, uint32 len);
-		uint32	clear();
+		int32	capacity();
+		int32	resize(int32 cap);
+		int32	read(uint8 *buf, int32 len);
+		int32	write(const uint8 *buf, int32 len);
+		int32	peek(uint8 *buf, int32 len);
+		int32	clear();
+		int32	size(){
+			return	m_size;
+		}
 
 	private:
 		uint8	*m_buf;
-		uint32	m_cap;
-		uint32	m_size;
-		uint32	m_start;
+		int32	m_cap;
+		int32	m_size;
+		int32	m_start;
 		
 };
 
