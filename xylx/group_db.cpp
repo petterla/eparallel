@@ -28,7 +28,7 @@ namespace	group{
 
 	}
 
-	int32	g_connection::handle_read(){
+	int32	g_connection::handle_pack(){
 
 		int32	actrcv = 0;
 		int32	ret = 0;
@@ -40,7 +40,8 @@ namespace	group{
 
 		get_addr(addr, port);
 		m_last_time = time(NULL);		
-
+		
+		#if 0
 		if(m_rcvlen == 0){
 			ret = recv(get_fd(), (char*)&h, sizeof(h), 0);
 			if(ret <= 0){
@@ -95,6 +96,48 @@ namespace	group{
 				<< port << ", recv msg len:" << len;
 		}
 		return	0;
+	#else
+		printf("handle_pack\n");
+		ret = peek_buf((char*)&h, sizeof(h));
+		if(ret < sizeof(h)){
+			elog::elog_error(tag) << "con:" << get_id()
+				<< ",ip:" << inet_ntoa(addr) << ",port:" 
+				<< port << ", wait head:" << ret;
+
+			return	set_notify_pack(sizeof(h));
+		}
+		if(htonl(h.magic) != 0x2013518){
+			elog::elog_error(tag) << "con:" << get_id()
+				<< ",ip:" << inet_ntoa(addr) << ",port:" 
+				<< port << ", error magic:" << htonl(h.magic);
+			return	-1;
+		}
+
+		len = htonl(h.len);
+		if(len < sizeof(h) || len > 1024 * 1024){
+			elog::elog_error(tag) << "con:" << get_id()
+				<< ",ip:" << inet_ntoa(addr) << ",port:" 
+				<< port << ", error len:" << len;
+			return	-1;
+		}
+		
+		if(buf_len() >= len){
+			std::string cont;
+			cont.resize(len);
+			read_buf((char*)cont.data(), len);
+			ef::message	msg(get_thread(), get_id(), cont);
+			ret = m_db->get_msg_queue()->push_msg(msg);
+			set_notify_pack(0);
+			elog::elog_info(tag) << "con:" << get_id()
+				<< ",ip:" << inet_ntoa(addr) << ",port:" 
+				<< port << ", recv msg len:" << len 
+				<< ",push ret:" << ret;
+					
+		}else{
+			set_notify_pack(len);
+		}
+		return	ret;
+	#endif
 
 	}
 

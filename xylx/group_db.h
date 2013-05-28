@@ -24,7 +24,7 @@ class g_connection:public ef::connection
 		~g_connection();
 
 		virtual	int32	on_create();
-		virtual	int32	handle_read();
+		virtual	int32	handle_pack();
 		virtual	int32	handle_timer(int32	id);
 
 	protected:

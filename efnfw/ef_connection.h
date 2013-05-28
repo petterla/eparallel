@@ -15,6 +15,10 @@ class	message;
 
 class	connection{
 	public:
+		enum{
+			FLAG_NULL = 0,
+			FLAG_SAFE_CLOSE = 1,
+		};
 		connection(SOCKET fd = INVALID_SOCKET, uint32 id = 0);
 		virtual	~connection();
 
@@ -26,6 +30,8 @@ class	connection{
 		int32	clear();
 		int32	start_timer(int32 id, int32 timeout);
 		int32	stop_time(int32 id);
+		//close after all send buf has send
+		int32	safe_close();
 
 		virtual	int32	handle_read();
 		virtual	int32	handle_write();
@@ -35,7 +41,7 @@ class	connection{
 		virtual	int32	on_create();
 
 		//when recv buf is more than len,call handle_pack
-		int32	notify_pack(int32 len){
+		int32	set_notify_pack(int32 len){
 			m_noti_len = len;
 			return	0;
 		}
@@ -108,6 +114,7 @@ class	connection{
 		std::list<timer>	m_timers;
 		std::list<std::string>	m_msgs;
 		uint32	m_cur_msg_start;
+		int32		m_flag;
 };
 
 
