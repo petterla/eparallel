@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #endif
+#include <string.h>
 #include <fstream>
 #include <algorithm>
 
