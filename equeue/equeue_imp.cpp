@@ -2,6 +2,9 @@
 #include "equeue_utility.h"
 #include "elog.h"
 #include <cassert>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 namespace eq{
 
