@@ -9,7 +9,7 @@ namespace	ef{
 			m_size(0),
 			m_start(0)
 		{
-			assert(m_size);
+			assert(cap);
 			m_buf = (uint8*)new uint8[cap];
 		}
 

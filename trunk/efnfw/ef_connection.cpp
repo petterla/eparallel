@@ -10,6 +10,22 @@ namespace ef{
 
 const char* connection::tag = "connection";
 
+connection::connection(SOCKET fd, uint32 id)
+	:m_fd(fd),m_id(id),m_thread(NULL),
+	m_noti(0),m_noti_len(0),m_buf(),
+	m_cur_msg_start(0),m_flag(FLAG_NULL)
+{
+
+}
+
+connection::~connection(){
+	clear();
+}
+
+int32	connection::recycle(){
+	delete	this;
+	return	0;
+}
 
 int32	connection::clear(){
 	if(m_thread){
@@ -37,36 +53,66 @@ int32	connection::clear(){
 	return	0;
 }
 
+int32	connection::safe_close(){
+	//if has no to send
+	if(m_msgs.begin() == m_msgs.end()){
+		return	recycle();
+	}
+	if(m_thread){
+		if(m_noti & ADD_READ){
+			m_thread->set_notify(this, m_noti | DEL_READ);
+		}
+
+		std::list<timer>::iterator	itor = m_timers.begin();
+		for(;itor != m_timers.end(); ++itor){
+			m_thread->del_timer(*itor);
+		}
+
+		m_timers.clear();
+		m_thread->del_connection(this);
+		m_thread = NULL;
+	}
+	m_flag = FLAG_SAFE_CLOSE;
+	return	do_send();
+}
 
 int32	connection::handle_read(){
 	int32	ret = 0;
 	char	tmpbuf[16 * 1024];
 	int32	actrcv = 0;
+
 	while(true){
 		actrcv = 0;
 		ret = tcp_nb_receive(m_fd, tmpbuf, sizeof(tmpbuf), &actrcv);
-		if(ret < 0){
-			return	ret;
+		if(ret <= 0){
+			break;
 		}
+		printf("read len:%d, actrcv:%d\n", ret, actrcv);
 		if(m_buf.size() + actrcv > m_buf.capacity()){
 			m_buf.resize(m_buf.capacity() + actrcv);
-			m_buf.write((uint8*)tmpbuf, actrcv);	
 		}
-		if(m_buf.size() >= m_noti_len){
+		int32 wlen =  m_buf.write((uint8*)tmpbuf, actrcv);
+		printf("wlen:%d\n", wlen);	
+
+		while(m_buf.size() && m_buf.size() >= m_noti_len){
+			printf("buf_size:%d\n", m_buf.size());
 			ret = handle_pack();
-		}
-		if(ret < 0){
-			return	ret;
+			if(ret < 0){
+				return	ret;
+			}
 		}
 	}
 	
 	return	ret;
 }
 
-
 int32	connection::handle_write(){
 	int32	ret	= do_send();
 	return	ret;
+}
+
+int32	connection::handle_pack(){
+	return	0;
 }
 
 int32	connection::on_create(){
@@ -75,18 +121,6 @@ int32	connection::on_create(){
 
 }
 	
-connection::connection(SOCKET fd, uint32 id)
-	:m_fd(fd),m_id(id),m_thread(NULL),
-	m_noti(0),m_noti_len(0),m_buf(1024*1024),
-	m_cur_msg_start(0)
-{
-
-}
-
-connection::~connection(){
-	clear();
-}	
-
 int32	connection::set_thread(net_thread *thr){
 	m_thread = thr;
 	return	0;
@@ -152,10 +186,7 @@ int32	connection::handle_timer(int32 id){
 	return	0;
 }
 
-int32	connection::recycle(){
-	delete	this;
-	return	0;
-}
+
 
 int32	connection::send_message(const std::string &msg){
 	int32	ret = 0;
@@ -194,7 +225,7 @@ do_:
 int32	connection::do_send(){
 
 	int32	noti = 0;
-	while(m_msgs.size()){
+	while(m_msgs.begin() != m_msgs.end()){
 		std::string	msg = m_msgs.front();
 		uint32	len = msg.length() - m_cur_msg_start;
 		int32	ret = send_(msg.c_str() + m_cur_msg_start, len);
@@ -214,6 +245,9 @@ int32	connection::do_send(){
 			}
 			return	0;
 		}
+	}
+	if(m_flag == FLAG_SAFE_CLOSE){
+		return	-2;
 	}
 
 	if(m_noti & ADD_WRITE){
