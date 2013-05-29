@@ -194,8 +194,11 @@ const	char*	net_thread::tag="net_thread";
 			}
 			if(nfds < 0){
 				write_log(tag,EF_LOG_LEVEL_ALL,"epoll error,errno:%d!", errno);				
-				break;
-				//error
+				if(errno != SOCK_EINTR){	
+					write_log(tag,EF_LOG_LEVEL_ERROR,"stop,errno:%d!", errno);				
+					break;
+					//error
+				}
 			}
 			if(nfds == 0){
 				write_log(tag,EF_LOG_LEVEL_ALL,"epoll timeout!");				

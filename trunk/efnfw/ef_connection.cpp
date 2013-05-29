@@ -55,6 +55,8 @@ int32	connection::clear(){
 
 int32	connection::safe_close(){
 	//if has no to send
+	write_log(tag,EF_LOG_LEVEL_ALL,"con:%p, id:%u, fd:%d safe_close!", 
+		this, m_id, m_fd);
 	if(m_msgs.begin() == m_msgs.end()){
 		return	recycle();
 	}
@@ -84,18 +86,22 @@ int32	connection::handle_read(){
 	while(true){
 		actrcv = 0;
 		ret = tcp_nb_receive(m_fd, tmpbuf, sizeof(tmpbuf), &actrcv);
+		write_log(tag,EF_LOG_LEVEL_ALL,
+			"con:%p, id:%u, fd:%d, recv ret:%d, actrcv:%d!",
+			this, m_id, m_fd, ret, actrcv); 
 		if(ret <= 0){
 			break;
 		}
-		printf("read len:%d, actrcv:%d\n", ret, actrcv);
 		if(m_buf.size() + actrcv > m_buf.capacity()){
 			m_buf.resize(m_buf.capacity() + actrcv);
 		}
-		int32 wlen =  m_buf.write((uint8*)tmpbuf, actrcv);
-		printf("wlen:%d\n", wlen);	
+		m_buf.write((uint8*)tmpbuf, actrcv);
 
 		while(m_buf.size() && m_buf.size() >= m_noti_len){
-			printf("buf_size:%d\n", m_buf.size());
+			write_log(tag,EF_LOG_LEVEL_ALL,
+				"con:%p, id:%u, fd:%d, buf_size:%d, "
+				"noti_len:%d, handle_pack!", 
+				this , m_id, m_fd, m_buf.size(), m_noti_len);
 			ret = handle_pack();
 			if(ret < 0){
 				return	ret;
@@ -229,6 +235,9 @@ int32	connection::do_send(){
 		std::string	msg = m_msgs.front();
 		uint32	len = msg.length() - m_cur_msg_start;
 		int32	ret = send_(msg.c_str() + m_cur_msg_start, len);
+		write_log(tag,EF_LOG_LEVEL_ALL,
+			"con:%p, id:%u, fd:%d, send ret:%d!",
+			this, m_id, m_fd, ret); 
 		if(ret < 0){
 			return	ret;
 		}

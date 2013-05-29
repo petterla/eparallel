@@ -17,7 +17,7 @@ namespace ef{
 
 	int	write_log(const char* tag, int loglevel, const char* format, ...);
 
-
+	int	set_log_level(int loglevel);
 };
 
 #endif
