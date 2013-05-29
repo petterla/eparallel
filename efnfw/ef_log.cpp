@@ -4,7 +4,7 @@
 
 namespace ef{
 
-static	int	g_log_level = EF_LOG_LEVEL_NOTIFY;
+static	int	g_log_level = EF_LOG_LEVEL_ALL;
 
 	int	write_log(const char* tag, int loglevel, const char* format, ...){
 		int	cnt = 0;		
@@ -19,5 +19,9 @@ static	int	g_log_level = EF_LOG_LEVEL_NOTIFY;
 		return cnt;
 	}
 
+	int	set_log_level(int level){
+		g_log_level = level;
+		return 0;
+	}
 };
 

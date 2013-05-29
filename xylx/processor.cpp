@@ -29,13 +29,13 @@ int processor::process(const std::string& rq, std::string&resp, void* par){
     int ret = 0; 
     switch(hd->cmd){
     case GET_CHARM_REQ:
-        ret = handle_get_charm_req(req, rsp, par);
         elog::elog_info("processor") << "handle_get_charm_req";
+        ret = handle_get_charm_req(req, rsp, par);
         rh.cmd = htonl(GET_CHARM_RESP);
         break;
     case INTEREST_REQ:
-        ret = handle_interest_req(req, rsp, par);
         elog::elog_info("processor") << "handle_interest_req";
+        ret = handle_interest_req(req, rsp, par);
         rh.cmd = htonl(INTEREST_RESP);
         break;
     }

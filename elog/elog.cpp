@@ -592,7 +592,7 @@ int log::free_loggers(loggers& lgs){
 
 int fileappender::write_s(const std::string& s){
     if(m_file){
-		be::be_mutex_take(&m_cs);
+        be::be_mutex_take(&m_cs);
         fwrite(s.data(), s.size(), 1, m_file);
         if(m_immediately_flush)
             fflush(m_file);

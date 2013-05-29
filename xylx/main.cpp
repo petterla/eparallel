@@ -51,6 +51,7 @@ int	main(int argc,char** argv)
 	group::group_db	db;
 	g_pdb	=	&db;
 	if(db.init(argv[1]) < 0){
+		printf("db init:%s fail!\n", argv[1]);
 		return	-1;
 	}
 	db.run();

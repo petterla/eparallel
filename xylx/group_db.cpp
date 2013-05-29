@@ -41,64 +41,7 @@ namespace	group{
 		get_addr(addr, port);
 		m_last_time = time(NULL);		
 		
-		#if 0
-		if(m_rcvlen == 0){
-			ret = recv(get_fd(), (char*)&h, sizeof(h), 0);
-			if(ret <= 0){
-				elog::elog_info(tag) << "con:" << get_id()
-					<< ",ip:" << inet_ntoa(addr) << ",port:" 
-					<< port << "close, error:" << strerror(errno);
-				return	-1;
-			}
-		
-			if(ret < sizeof(h)){
-				elog::elog_info(tag) << "con:" << get_id()
-					<< ",ip:" << inet_ntoa(addr) << ",port:" 
-					<< port << " head too small:" << ret;
-				return	-1;
-			}
-			if(htonl(h.magic) != 0x2013518){
-				elog::elog_error(tag) << "con:" << get_id()
-					<< ",ip:" << inet_ntoa(addr) << ",port:" 
-					<< port << ", error magic:" << htonl(h.magic);
-				return	-1;
-			}
-			len = htonl(h.len);
-			if(len < sizeof(h) || len > 1024 * 1024){
-				elog::elog_error(tag) << "con:" << get_id()
-					<< ",ip:" << inet_ntoa(addr) << ",port:" 
-					<< port << ", error len:" << len;
-				return	-1;
-			}
-			m_msglen = len;
-			m_rcvlen = sizeof(h);
-			m_buf.append((char*)&h, sizeof(h));
-			m_buf.resize(len);
-		}
-		ret = tcp_nb_receive(get_fd(), const_cast<char*>(m_buf.c_str() + m_rcvlen),
-				m_msglen - m_rcvlen, &actrcv);
-
-		if(ret < 0){
-			elog::elog_info(tag) << "con:" << get_id()
-				<< ",ip:" << inet_ntoa(addr) << ",port:" 
-				<< port << "nb recv fail, error:" << strerror(errno);
-			return	ret;
-		}
-		m_rcvlen += actrcv;
-		if(m_rcvlen >= m_msglen){
-			ef::message	msg(get_thread(), get_id(), m_buf);
-			m_db->get_msg_queue()->push_msg(msg);
-			m_msglen = 0;
-			m_rcvlen = 0;
-			m_buf.resize(0);
-			elog::elog_info(tag) << "con:" << get_id()
-				<< ",ip:" << inet_ntoa(addr) << ",port:" 
-				<< port << ", recv msg len:" << len;
-		}
-		return	0;
-	#else
-		printf("handle_pack\n");
-		ret = peek_buf((char*)&h, sizeof(h));
+				ret = peek_buf((char*)&h, sizeof(h));
 		if(ret < sizeof(h)){
 			elog::elog_error(tag) << "con:" << get_id()
 				<< ",ip:" << inet_ntoa(addr) << ",port:" 
@@ -137,7 +80,6 @@ namespace	group{
 			set_notify_pack(len);
 		}
 		return	ret;
-	#endif
 
 	}
 
@@ -265,7 +207,7 @@ void* group_db::net_thread_process(void *param){
 	ef::net_thread *thr = (ef::net_thread *)param;
 	assert(thr);
 	thr->run();
-
+	std::cout << "net_thread_stop!\n" << std::endl;
 	return 0;
 }
 
@@ -287,7 +229,7 @@ int group_db::run(){
 		NULL, net_thread_process,m_net_thread);
 
 	for(int i = 0; i < m_workthreadcnt; ++i){
-		std::cout << "start thread:" << i <<std::endl;
+		std::cout << "\nstart thread:" << i <<std::endl;
 		be::be_thread_create(&m_work_thread_handles[i],
 			NULL, work_thread_process,m_work_threads[i]);		
 	}
