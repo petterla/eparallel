@@ -2,11 +2,13 @@
 #define MYSQL_ADAPTER_H
 
 #include "mysql.h"
+#include <string>
 
 namespace ma{
 
 class sql_result{ 
-    sql_result(MYSQL *msql = NULL):
+public:
+    sql_result(MYSQL *msql = NULL)
         :m_result(NULL),m_field_cnt(0){
         if(msql){
             m_result = mysql_store_result(msql);
@@ -58,13 +60,13 @@ class sql_result{
 
 private:
     MYSQL_RES *m_result;
-    int32   m_field_cnt;
+    int   m_field_cnt;
 };
 
 class adapter{
 public:
     adapter()
-        :m_host(NULL), m_user(NULL)
+        :m_host(NULL), m_user(NULL),
         m_pwd(NULL), m_db(NULL),
         m_port(0), m_mysql(NULL){
     }
@@ -86,10 +88,10 @@ private:
     const char *m_user;
     const char *m_pwd;
     const char *m_db;
-    const char m_port;
+    unsigned int m_port;
     MYSQL *m_mysql;
-}
+};
 
-}
+};
 
 #endif/**/
