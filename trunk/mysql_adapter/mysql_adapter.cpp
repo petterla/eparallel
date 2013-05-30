@@ -13,7 +13,7 @@ int adapter::init(const char* host, const char* user,
     m_port = port;  
     m_mysql = mysql_init(NULL);
     if(!m_mysql){
-        elog::elog_error(tag) <<  "adatper:" << this << " initi mysql fail!";
+        elog::elog_error("adapter") <<  "adatper:" << this << " initi mysql fail!";
         return -1;
     }
 
@@ -21,18 +21,18 @@ int adapter::init(const char* host, const char* user,
     mysql_options(m_mysql, MYSQL_OPT_RECONNECT, (char *)&value);
 
     m_mysql = mysql_real_connect(m_mysql, m_host, m_user,
-           m_passwd, m_dbtabase, m_port, NULL, 0);
+           m_pwd, m_db, m_port, NULL, 0);
     if(!m_mysql){ 
         elog::elog_error("adapter") <<  "adapter:" << this << " connect mysql fail,host:"
-            << m_host << ",user:" << m_user << ",password:" << m_passwd
-            << ",port:" << m_port << ",database:" << m_dbtabase;
+            << m_host << ",user:" << m_user << ",password:" << m_pwd
+            << ",port:" << m_port << ",database:" << m_db;
         return  -2;
     }
 
     mysql_set_character_set(m_mysql, "utf8");
     elog::elog_error("adapter") <<  "adapter:" << this << " init,host:"
-            << m_host << ",user:" << m_user << ",password:" << m_passwd
-            << ",port:" << m_port << ",database:" << m_dbtabase;
+            << m_host << ",user:" << m_user << ",password:" << m_pwd
+            << ",port:" << m_port << ",database:" << m_db;
     return 0;
 }
 
@@ -47,11 +47,15 @@ int adapter::clear(){
 
 int adapter::query(const std::string &sql, sql_result &sqlret){
     int ret = 0;
-
-    ret = mysql_real_query(msql, sql.c_str(), sql.length());
+    if(!m_mysql){
+        elog::elog_error("adapter") <<  "adapter:" << this << " not init, query:"
+            << sql << " fail!";
+        return -1;
+    }
+    ret = mysql_real_query(m_mysql, sql.c_str(), sql.length());
 
     if(ret == 0){
-        sql_result tmp(s);
+        sql_result tmp(m_mysql);
         sqlret = tmp;
     }else{
         elog::elog_error("adapter") <<  "adapter:" << this << " ,query:"
@@ -64,10 +68,14 @@ int adapter::query(const std::string &sql, sql_result &sqlret){
 
 int adapter::update(const std::string &sql){
     int ret = 0;
-
-    ret = real_query(sql, 0);
+    if(!m_mysql){
+        elog::elog_error("adapter") <<  "adapter:" << this << " not init, update:"
+            << sql << " fail!";
+        return -1;
+    }
+    ret = mysql_real_query(m_mysql, sql.data(), sql.size());
     if(ret == 0){
-        ret = mysql_affected_rows(m_master_mysql);
+        ret = mysql_affected_rows(m_mysql);
     }else{
         elog::elog_error("adapter") <<  "adapter:" << this << " ,update:"
             << sql << " fail!";
@@ -78,6 +86,7 @@ int adapter::update(const std::string &sql){
 }
 
 int adapter::escape_string(std::string &str){
+    int ret = 0;
     if(str.length() == 0 || !m_mysql){
         return 0;
     }
