@@ -33,7 +33,11 @@ file_list get_file_list(const std::string& path,
         }
         file_info f;
         f.name = dir_env->d_name;
-        f.full_name = path + f.name;
+        if(path[path.size()] == '/'){
+            f.full_name = path + f.name;
+        }else{
+            f.full_name = path + "/" + f.name;
+        }
         stat(f.full_name.data(),&stat_file);
         if(S_ISDIR(stat_file.st_mode) == false){
             f.size = stat_file.st_size;

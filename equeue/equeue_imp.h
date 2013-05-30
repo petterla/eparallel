@@ -43,7 +43,13 @@ public:
     int del(int64 id);  
     int del(const task& t);  
     
-    int64 size(); 
+    int64 size(){
+        return m_size;
+    } 
+
+    int64 count(){
+        return m_cnt;
+    }
    
     //when the size is small,dump to file 
     int dump();
