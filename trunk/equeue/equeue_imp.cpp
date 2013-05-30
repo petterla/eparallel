@@ -55,7 +55,7 @@ int save_op_to_buf(const op& o, char* buf, int len){
     if(len < (int)sizeof(int64)){
         return -1;
     }
-    *(int64*)buf = o.m_cmd;
+    *(int64*)buf = o.m_op_id;
     buf += sizeof(int64);
     len -= sizeof(int64);  
     if(len < (int)sizeof(o.m_t.m_id)){
@@ -79,9 +79,11 @@ int save_op_to_buf(const op& o, char* buf, int len){
 }
 
 eq_imp::eq_imp()
-    :m_maxsize(0), m_maxcnt(0), 
+    :m_maxsize(0), m_maxcnt(0),
+    m_size(0), m_cnt(0), 
     m_current_op_id(0),
     m_current_task_id(0),
+    m_current_file_id(0),
     m_current_file(NULL){
 }
 
@@ -173,14 +175,15 @@ int eq_imp::load_one_bin_log_file(const std::string& f,
         ret = fread(const_cast<char*>(record.data()), len, 1, inf);
         if(ret < 1){
             elog::elog_error("eq_imp") << " load_one_file:" << f 
-                                       << ", read record fail!";
+                                       << ", read record len:"
+                                       << len << " fail!";
             break;
         }
         op o;
         ret = load_op_from_buf(record.data(), record.size(), o);
         if(ret < 0){
             elog::elog_error("eq_imp") << " load_one_file:" << f 
-                                       << ", load record fail!";
+                                       << ", load record from buf fail!";
             break;
         }
         if(o.m_op_id < startopid){
@@ -242,15 +245,17 @@ int eq_imp::add_back(const std::string& t){
 int eq_imp::check_if_open_new_file(){
     int ret = 0;
     pthread_mutex_lock(&m_cs);
-    if(!m_current_file 
-        || ftell(m_current_file) >= DEFAULT_BLOCK_SIZE){
-        m_current_file_id++;
+    if(m_current_file 
+        && ftell(m_current_file) < DEFAULT_BLOCK_SIZE){
+        pthread_mutex_unlock(&m_cs);
+        return ret;
     } 
+    m_current_file_id++;
     if(m_current_file){
         fclose(m_current_file);
     }
     std::stringstream os;
-    os << m_current_file_id << ".log";
+    os << m_store_path << "/" << m_current_file_id << ".log";
     m_current_file = fopen(os.str().data(), "wb");
     if(!m_current_file){
         elog::elog_error("eq_imp") << "check_if_open_new_file, open :" 
@@ -279,9 +284,14 @@ int eq_imp::save_task_to_file(const op& o){
 
         return -2;
     }
+    int sz = buf.size() - ret;
+    std::string record;
+    record.append((char*)&sz, sizeof(sz));
+    record.append(buf.data(), buf.size() - ret);
+
     pthread_mutex_lock(&m_cs);
     //attention : set the op_id under lock
-    int len = fwrite(buf.data(), buf.size() - ret, 1, m_current_file); 
+    int len = fwrite(record.data(), record.size(), 1, m_current_file); 
     if(len < 1){
         elog::elog_error("eq_imp") << "save_task_to_file, oid:"
               << o.m_op_id << ",cmd:" << o.m_cmd << ",task_id:"
@@ -290,10 +300,18 @@ int eq_imp::save_task_to_file(const op& o){
     }
     fflush(m_current_file);
     pthread_mutex_unlock(&m_cs);
+    elog::elog_info("eq_imp") << "save_task_to_file save_to_buf, oid:"
+              << o.m_op_id << ",cmd:" << o.m_cmd << ",task_id:"
+              << o.m_t.m_id << ",len:" << len;
+
+
     return ret;
 }
 
 
+int eq_imp::del(const task& t){
+    return del(t.m_id);
+}
 
 int eq_imp::del(int64 id){
     int ret = 0;
@@ -315,8 +333,12 @@ int eq_imp::del(int64 id){
               << o.m_t.m_id << ", fail!";
         return -3;
     }
+    int sz = buf.size() - ret;
+    std::string record;
+    record.append((char*)&sz, sizeof(sz));
+    record.append(buf.data(), buf.size() - ret);
     pthread_mutex_lock(&m_cs);
-    int len = fwrite(buf.data(), buf.size() - ret, 1, m_current_file); 
+    int len = fwrite(record.data(), record.size(), 1, m_current_file); 
     if(len < 1){
         elog::elog_error("eq_imp") << "del, oid:"
               << o.m_op_id << ",cmd:" << o.m_cmd << ",task_id:"
@@ -325,6 +347,10 @@ int eq_imp::del(int64 id){
     }
     fflush(m_current_file);
     pthread_mutex_unlock(&m_cs);
+    elog::elog_info("eq_imp") << "del, oid:"
+          << o.m_op_id << ",cmd:" << o.m_cmd << ",task_id:"
+          << o.m_t.m_id << ",len:" << len;
+
     return ret;
 }
 
@@ -347,6 +373,7 @@ int eq_imp::del_task(const op& t){
             m_size -= t.m_t.m_cont.size();
             --m_cnt;
             ret = 1;
+            break;
         }
     }
     pthread_mutex_unlock(&m_cs);
@@ -360,7 +387,7 @@ int eq_imp::get_front(task& t){
         return ret;
     }
     pthread_mutex_lock(&m_cs);
-    assert(m_tasks.size());
+    assert(m_cnt);
     t = m_tasks.front().m_t;
     m_tasks.erase(m_tasks.begin());
     m_size -= t.m_cont.size();
@@ -396,6 +423,9 @@ int eq_imp::dump(){
     fwrite(os.str().data(), os.str().size(), 1, df);
     fclose(df);
     pthread_mutex_unlock(&m_cs);
+    elog::elog_info("eq_imp") << "dump,log_id:"
+          << log_id << ",op_id:" << op_id;
+
     return ret;     
 }
 

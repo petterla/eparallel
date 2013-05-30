@@ -365,7 +365,7 @@ int log::load_loggers(const std::string& conf, const appenders& apps, loggers& l
                 << level << ">\n"; 
         }
     }while(0);
-    config_init(&cfg);
+    config_destroy(&cfg);
     return ret;
 }
 int log::load_default_logger(const std::string& conf, const appenders& apps, log_t& lg){
@@ -440,7 +440,7 @@ int log::load_default_logger(const std::string& conf, const appenders& apps, log
 	    " <appender:" << append << "> <level:"
 	    << level << ">\n"; 
     }while(0);
-    config_init(&cfg);
+    config_destroy(&cfg);
     return ret;
 }
 
