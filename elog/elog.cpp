@@ -593,10 +593,12 @@ int log::free_loggers(loggers& lgs){
 int fileappender::write_s(const std::string& s){
     if(m_file){
         be::be_mutex_take(&m_cs);
-        fwrite(s.data(), s.size(), 1, m_file);
-        if(m_immediately_flush)
-            fflush(m_file);
-        be::be_mutex_give(&m_cs);
+        if(m_file){
+            fwrite(s.data(), s.size(), 1, m_file);
+            if(m_immediately_flush)
+                fflush(m_file);
+            be::be_mutex_give(&m_cs);
+        }
     }
     return 0;
 }
