@@ -35,7 +35,7 @@ public:
 	for(int i = 0; i < resp.get_charm_resp().interest_person_size(); ++i){
 		const Person& p = resp.get_charm_resp().interest_person(i);
 		std::cout << "interest_person[" << i << "],phone:" 
-			<< p.phone() << ",name:" << p.name() 
+			<< p.phone() << ",sendmsg:" << p.sendmsg() 
 			<< ",message:" << p.message() << std::endl;	
 	}
         return 0;

@@ -52,6 +52,8 @@ int adapter::query(const std::string &sql, sql_result &sqlret){
             << sql << " fail!";
         return -1;
     }
+    elog::elog_trace("adapter") << "adapter:" << this << " ,query:"
+            << sql;
     ret = mysql_real_query(m_mysql, sql.c_str(), sql.length());
 
     if(ret == 0){
@@ -73,6 +75,8 @@ int adapter::update(const std::string &sql){
             << sql << " fail!";
         return -1;
     }
+    elog::elog_trace("adapter") << "adapter:" << this << " ,update:"
+            << sql;
     ret = mysql_real_query(m_mysql, sql.data(), sql.size());
     if(ret == 0){
         ret = mysql_affected_rows(m_mysql);
