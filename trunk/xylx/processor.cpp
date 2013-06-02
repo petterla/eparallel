@@ -53,8 +53,9 @@ int processor::handle_get_charm_req(const Request& req, Response& resp, void* pa
     int ret = 0;
     work_thread* t = (work_thread*)par;
     std::stringstream os;
+    std::map<std::string, std::string> persons;
 
-    os << "select count(*) from xylx.interest_t where `to_phone` = '" 
+    os << "select `from_phone`,`message` from xylx.interest_t where `to_phone` = '" 
         << req.get_charm_req().phone() << "';";
     ma::sql_result rest;
     ret  = t->mysql_adapter().query(os.str(), rest);
@@ -63,36 +64,27 @@ int processor::handle_get_charm_req(const Request& req, Response& resp, void* pa
         return 0;
     }
     int charm_mark = 0;
-    MYSQL_ROW row = rest.fetch_row();
-    if(row && row[0]){
-        charm_mark = atoi(row[0]);
+    MYSQL_ROW row;
+    while ((row  = rest.fetch_row())){
+        if(row[0] && row[1]){
+            persons[row[0]] = row[1];
+        }
     }
+    charm_mark = (int)persons.size();
     GetCharmRespone* cr = resp.mutable_get_charm_resp();
     cr->set_charm_mark(charm_mark);
     if(charm_mark == 0){
         return 0;
     }
     os.str("");
-    os << "select `to_phone` from xylx.interest_t where `from_phone` = '"
-        << req.get_charm_req().phone() << "';";
-    ret = t->mysql_adapter().query(os.str(), rest);
-    if(ret < 0){
-        resp.set_status(DB_FAIL);
-        return 0;
-    }
-    os.str("");
-    row = rest.fetch_row();
-    if(!row){
-        return 0;
-    }
-    os << "select `from_phone`,`from_name`,`message` from"
-         " xylx.interest_t where `to_phone` = '"
-        << req.get_charm_req().phone() << "' and `from_phone` in(";
-    while(row){
-        os << "'" << row[0]; 
-        row = rest.fetch_row();
-        if(row){
-            os << "','";
+    os << "select `to_phone`,`message` from xylx.interest_t where `from_phone` = '"
+        << req.get_charm_req().phone() << "' and `to_phone` in(";
+    std::map<std::string, std::string>::iterator it = persons.begin();
+    while(it != persons.end()){
+        os << "'" << it->first;
+        ++it;
+        if(it != persons.end()){
+            os << "',";
         }else{
             os << "'";
         }
@@ -102,16 +94,17 @@ int processor::handle_get_charm_req(const Request& req, Response& resp, void* pa
     if(ret < 0){
         resp.set_status(DB_FAIL);
         return 0;
-    } 
+    }
     while((row = rest.fetch_row())){
         Person* p = cr->add_interest_person();
         p->set_phone(row[0] ? row[0] : "");
-        p->set_name(row[1] ? row[1] : "");
-        p->set_message(row[2] ? row[2] : "");
+        //p->set_name(row[1] ? row[1] : "");
+        p->set_message(persons[row[0]]);
+        p->set_sendmsg(row[1] ? row[1] : "");
         elog::elog_info("processor") << "<phone:" << req.get_charm_req().phone()
             << "> interest and be interested by <phone:" << (row[0] ? row[0] : "")
-            << "><name:" << (row[1] ? row[1] : "") << "><message:"
-            << (row[2] ? row[2] : "") << ">";
+            << "><sendmsg:" << (row[1] ? row[1] : "") << "><message:"
+            << (persons[row[0]]) << ">";
     }
     return 0;
 }
