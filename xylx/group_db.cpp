@@ -29,10 +29,7 @@ namespace	group{
 	}
 
 	int32	g_connection::handle_pack(){
-
-		int32	actrcv = 0;
 		int32	ret = 0;
-
                 Header h;
 		struct in_addr addr;
 		int32 port;
@@ -42,7 +39,7 @@ namespace	group{
 		m_last_time = time(NULL);		
 		
 				ret = peek_buf((char*)&h, sizeof(h));
-		if(ret < sizeof(h)){
+		if(ret < (int)sizeof(h)){
 			elog::elog_error(tag) << "con:" << get_id()
 				<< ",ip:" << inet_ntoa(addr) << ",port:" 
 				<< port << ", wait head:" << ret;
@@ -57,7 +54,7 @@ namespace	group{
 		}
 
 		len = htonl(h.len);
-		if(len < sizeof(h) || len > 1024 * 1024){
+		if(len < (int)sizeof(h) || len > 1024 * 1024){
 			elog::elog_error(tag) << "con:" << get_id()
 				<< ",ip:" << inet_ntoa(addr) << ",port:" 
 				<< port << ", error len:" << len;

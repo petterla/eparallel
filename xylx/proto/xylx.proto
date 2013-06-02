@@ -4,6 +4,8 @@ enum Command{
    GET_CHARM_RESP = 1002; 
    INTEREST_REQ = 1003;
    INTEREST_RESP = 1004;  
+   GET_RECOMMEND_REQ = 1005;
+   GET_RECOMMEND_RESP = 1006;
 };
 
 enum Status{
