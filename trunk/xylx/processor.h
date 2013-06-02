@@ -15,6 +15,7 @@ public:
 private:
     int handle_get_charm_req(const Request& req, Response& resp, void* par);
     int handle_interest_req(const Request& req, Response& resp, void* par);
+    int handle_get_recommend_req(const Request& req, Response& resp, void* par);
 };
 
 };

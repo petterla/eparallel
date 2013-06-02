@@ -38,6 +38,11 @@ int processor::process(const std::string& rq, std::string&resp, void* par){
         ret = handle_interest_req(req, rsp, par);
         rh.cmd = htonl(INTEREST_RESP);
         break;
+    case GET_RECOMMEND_REQ:
+        elog::elog_info("processor") << "handle_get_recommend_req";
+        ret = handle_get_recommend_req(req, rsp, par);
+        rh.cmd = htonl(GET_RECOMMEND_RESP);
+        break;
     }
     if(rsp.SerializeToString(&buf) != true){
         elog::elog_error("processor") << "Serialize to string fail";
@@ -124,6 +129,11 @@ int processor::handle_interest_req(const Request& req, Response& resp, void* par
         return 0;
     }  
     return 0;
+}
+
+int processor::handle_get_recommend_req(const Request& req, Response& resp, void* par){
+    int ret = 0;
+    return ret;
 }
 
 }
