@@ -34,18 +34,37 @@ namespace	group{
 		struct in_addr addr;
 		int32 port;
 		int32 len = 0;
+		char buf[4096] = {0};
+		char* body = NULL;
 
 		get_addr(addr, port);
 		m_last_time = time(NULL);		
 		
-				ret = peek_buf((char*)&h, sizeof(h));
-		if(ret < (int)sizeof(h)){
+		//get \r\n
+		ret = peek_buf(buf, sizeof(buf));
+		
+		body = strstr(buf, "\r\n\r\n");
+		if(body == NULL && ret < (int)sizeof(buf)){
 			elog::elog_error(tag) << "con:" << get_id()
 				<< ",ip:" << inet_ntoa(addr) << ",port:" 
-				<< port << ", wait head:" << ret;
-
-			return	set_notify_pack(sizeof(h));
+				<< port << ", wait http head:" << ret;
+			return	set_notify_pack(ret + 1);
+		}else if(ret >= (int)sizeof(buf)){
+			elog::elog_error(tag) << "con:" << get_id()
+				<< ",ip:" << inet_ntoa(addr) << ",port:" 
+				<< port << ", get http head fail!";
+			return	-1;
+		}else{
+			m_buf.resize(body - buf + 4);
+			elog::elog_info(tag) << "con:" << get_id()
+				<< ",ip:" << inet_ntoa(addr) << ",port:" 
+				<< port << ", recv http header:" << m_buf  
+				<< ",read len:" << ret;
+			read_buf((char*)m_buf.data(), m_buf.size());
+			return	set_notify_pack(sizeof(h));	
 		}
+		
+		peek_buf((char*)&h, sizeof(h));	
 		if(htonl(h.magic) != 0x2013518){
 			elog::elog_error(tag) << "con:" << get_id()
 				<< ",ip:" << inet_ntoa(addr) << ",port:" 
@@ -65,7 +84,7 @@ namespace	group{
 			std::string cont;
 			cont.resize(len);
 			read_buf((char*)cont.data(), len);
-			ef::message	msg(get_thread(), get_id(), cont);
+			ef::message	msg(get_thread(), get_id(), m_buf + cont);
 			ret = m_db->get_msg_queue()->push_msg(msg);
 			set_notify_pack(0);
 			elog::elog_info(tag) << "con:" << get_id()
