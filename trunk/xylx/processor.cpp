@@ -19,13 +19,13 @@ int processor::process(const std::string& rq, std::string&resp, void* par){
     hd->len = ntohl(hd->len);
     hd->cmd = ntohl(hd->cmd);
 
-    assert(hd->len == (int)rq.size());
+    assert(hd->len == (int)rq.size() - (body - rq.data() + 4));
     Header rh;
     Request req;
     Response rsp;
     std::string buf;
     rh.magic = htonl(0x2013518);
-    if(req.ParseFromString(rq.data() + sizeof(Header)) != true){
+    if(req.ParseFromString(body + 4 + sizeof(Header)) != true){
         elog::elog_error("processor") << "Parse from string fail";
         return -1; 
     }

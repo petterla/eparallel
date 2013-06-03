@@ -5,6 +5,7 @@
 #include "xylx.pb.h"
 #include "ef_sock.h"
 #include <iostream>
+#include <sstream>
 #include <errno.h>
 
 class xylx_client{
@@ -39,6 +40,11 @@ public:
         }
         h.len = htonl(sizeof(h) + str.size());
         std::string buf;
+        std::stringstream os;
+        os << (sizeof(h) + str.size());
+        buf = "POST HTTP/1.1\r\nAccept:*/*\r\nContent-Length:";
+        buf += os.str();
+        buf += "\r\n\r\n";
         buf.append((char*)&h, sizeof(h));
         buf.append(str.data(), str.size());
         int ret = send(m_sock, buf.data(), buf.size(), 0);
@@ -50,13 +56,22 @@ public:
     }
     
     int recv_resp(int& cmd, Response& resp){
+        std::string buf;
         Header h;
-        int ret = recv(m_sock, (char*)&h, sizeof(h), 0);
+        buf.resize(4096);
+        int ret = recv(m_sock, (char*)buf.data(), buf.size(), 0);
         if(ret <= 0){
             std::cout << "recv_resp head fail,errno:"
                       << errno << std::endl;
             return -1;
         }
+        const char* body = strstr(buf.data(), "\r\n\r\n");
+        if(!body || body + sizeof(h) > buf.data() + ret){
+            std::cout << "recv_resp http head fail:"
+                      << std::endl;
+            return -1;
+        }
+        h = *(Header*)(body + 4);
         h.magic = htonl(h.magic);
         if(h.magic != 0x2013518){
             std::cout << "recv_resp, error magic:" 
@@ -70,15 +85,22 @@ public:
             return -1;
         }
         cmd = htonl(h.cmd);
-        std::string buf;
-        buf.resize(h.len - sizeof(h));
-        ret = recv(m_sock, const_cast<char*>(buf.data()), buf.size(), 0);
-        if(ret <= 0){
-            std::cout << "recv_resp, errorno :" 
+        std::string bodybuf;
+        int rcvlen = ret - (body + 4 + sizeof(h) - buf.data());
+        bodybuf.append(body + 4 + sizeof(h), rcvlen);
+        int leftlen = h.len - sizeof(h) - rcvlen;
+        if(leftlen > 0){
+            std::string left;
+            left.resize(leftlen);
+            ret = recv(m_sock, const_cast<char*>(left.data()), buf.size(), 0);
+            if(ret <= 0){
+                std::cout << "recv_resp, errorno :" 
                       << errno << std::endl;
-            return -1;
+                return -1;
+            }
+            bodybuf += left;
         }
-        if(resp.ParseFromString(buf) != true){
+        if(resp.ParseFromString(bodybuf) != true){
             std::cout << "recv_resp,parse fail!" << std::endl;
             return -1;
         }

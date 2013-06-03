@@ -39,29 +39,31 @@ namespace	group{
 
 		get_addr(addr, port);
 		m_last_time = time(NULL);		
-		
-		//get \r\n
-		ret = peek_buf(buf, sizeof(buf));
-		
-		body = strstr(buf, "\r\n\r\n");
-		if(body == NULL && ret < (int)sizeof(buf)){
-			elog::elog_error(tag) << "con:" << get_id()
-				<< ",ip:" << inet_ntoa(addr) << ",port:" 
-				<< port << ", wait http head:" << ret;
-			return	set_notify_pack(ret + 1);
-		}else if(ret >= (int)sizeof(buf)){
-			elog::elog_error(tag) << "con:" << get_id()
-				<< ",ip:" << inet_ntoa(addr) << ",port:" 
-				<< port << ", get http head fail!";
-			return	-1;
-		}else{
-			m_buf.resize(body - buf + 4);
-			elog::elog_info(tag) << "con:" << get_id()
-				<< ",ip:" << inet_ntoa(addr) << ",port:" 
-				<< port << ", recv http header:" << m_buf  
-				<< ",read len:" << ret;
-			read_buf((char*)m_buf.data(), m_buf.size());
-			return	set_notify_pack(sizeof(h));	
+	
+		if(m_buf.size() == 0){	
+			//get \r\n
+			ret = peek_buf(buf, sizeof(buf));
+			
+			body = strstr(buf, "\r\n\r\n");
+			if(body == NULL && ret < (int)sizeof(buf)){
+				elog::elog_error(tag) << "con:" << get_id()
+					<< ",ip:" << inet_ntoa(addr) << ",port:" 
+					<< port << ", wait http head:" << ret;
+				return	set_notify_pack(ret + 1);
+			}else if(ret >= (int)sizeof(buf)){
+				elog::elog_error(tag) << "con:" << get_id()
+					<< ",ip:" << inet_ntoa(addr) << ",port:" 
+					<< port << ", get http head fail!";
+				return	-1;
+			}else{
+				m_buf.resize(body - buf + 4);
+				read_buf((char*)m_buf.data(), m_buf.size());
+				elog::elog_info(tag) << "con:" << get_id()
+					<< ",ip:" << inet_ntoa(addr) << ",port:" 
+					<< port << ", recv http header:" << m_buf  
+					<< ",read len:" << ret;
+				return	set_notify_pack(sizeof(h));	
+			}
 		}
 		
 		peek_buf((char*)&h, sizeof(h));	
@@ -108,10 +110,11 @@ namespace	group{
 		switch(id){
 		case CHECK_TIMER:
 			if(n - m_last_time > 5){
-			elog::elog_info(tag) << "con:" << get_id()
-				<< ",ip:" << inet_ntoa(addr) << ",port:" 
-				<< port << ", time out, last time:" 
-				<< m_last_time;
+				elog::elog_info(tag) << "con:" << get_id()
+					<< ",ip:" << inet_ntoa(addr) << ",port:" 
+					<< port << ", time out, last time:" 
+					<< m_last_time;
+				recycle();
 				return	-1;
 			}
 			start_timer(CHECK_TIMER, 5000);
