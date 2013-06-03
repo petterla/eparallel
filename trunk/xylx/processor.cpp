@@ -9,7 +9,11 @@
 namespace group{
 
 int processor::process(const std::string& rq, std::string&resp, void* par){
-    Header* hd = (Header*)rq.data();
+    const char* body = strstr(rq.data(), "\r\n\r\n");
+    if(!body){
+        return -1;
+    }
+    Header* hd = (Header*)(body + 4);
     
     hd->magic = ntohl(hd->magic);
     hd->len = ntohl(hd->len);
@@ -48,6 +52,11 @@ int processor::process(const std::string& rq, std::string&resp, void* par){
         elog::elog_error("processor") << "Serialize to string fail";
     }
     rh.len = htonl(sizeof(rh) + (int)buf.size());
+    std::stringstream os;
+    os << rh.len;
+    resp += "HTTP/1.1 200 OK\r\nContent-Type:text/plain\r\nServer:XYLX\r\nContent-Length:";
+    resp += os.str();
+    resp += "\r\n\r\n";
     resp.append((char*)&rh, sizeof(rh));
     resp.append(buf.data(), buf.size());
     
