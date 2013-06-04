@@ -56,6 +56,12 @@ std::string get_str_time_and_pid(time_t n){
 
 }
 
+std::string get_str_pid(){
+    std::stringstream os;
+    os << getpid();
+    return os.str();
+}
+
 time_t get_minute_timestamp(time_t n){                                                                                
     struct tm t;                                                                                                      
     t = *(localtime(&n));                                                                                             
@@ -543,16 +549,16 @@ int fileappender::take(){
         std::string filename;
         switch(m_schedu_span){
         case MINUTE:
-            filename = m_path + "_" + get_str_minute(n) + ".log";
+            filename = m_path + "_" + get_str_minute(n) + get_str_pid() + ".log";
             t = get_minute_timestamp(n);
             break;
         case HOUR:
-            filename = m_path + "_" + get_str_hour(n) + ".log";
+            filename = m_path + "_" + get_str_hour(n) + get_str_pid() + ".log";
             t = get_hour_timestamp(n);
             break;
         case DAY:
         default:
-            filename = m_path + "_" + get_str_day(n) + ".log";
+            filename = m_path + "_" + get_str_day(n) + get_str_pid() + ".log";
             t = get_day_timestamp(n);
             break;
         }
@@ -593,12 +599,10 @@ int log::free_loggers(loggers& lgs){
 int fileappender::write_s(const std::string& s){
     if(m_file){
         be::be_mutex_take(&m_cs);
-        if(m_file){
-            fwrite(s.data(), s.size(), 1, m_file);
-            if(m_immediately_flush)
-                fflush(m_file);
-            be::be_mutex_give(&m_cs);
-        }
+        fwrite(s.data(), s.size(), 1, m_file);
+        if(m_immediately_flush)
+            fflush(m_file);
+        be::be_mutex_give(&m_cs);
     }
     return 0;
 }
