@@ -49,6 +49,8 @@ class	net_thread{
 		virtual	int32	send_message(uint32 id, const std::string &msg);
 
 		virtual	int32	do_send_message(uint32 id, const std::string &msg);
+
+		virtual	int32	init();
 		
 		virtual	int32	run();
 

@@ -153,6 +153,21 @@ const	char*	net_thread::tag="net_thread";
 		return	0;
 	}
 
+	int32	net_thread::init(){
+		int32 ret = start_listen();
+		if(ret < 0){
+			write_log(tag,EF_LOG_LEVEL_ERROR,"net_thread:%p init fail -3!", this);
+			return	-3;
+		}
+
+		ret = start_ctl();
+		if(ret < 0){
+			write_log(tag,EF_LOG_LEVEL_ERROR,"net_thread:%p init fail -4!", this);
+			return	-4;
+		}
+		return	0;
+	}
+
 	int32	net_thread::run(){
 		int32	ret = 0;
 		int32	nfds = 0;
@@ -163,17 +178,6 @@ const	char*	net_thread::tag="net_thread";
 			return	-1;
 		}
 
-		ret = start_listen();
-		if(ret < 0){
-			write_log(tag,EF_LOG_LEVEL_ERROR,"net_thread:%p run stop -3!", this);
-			return	-3;
-		}
-
-		ret = start_ctl();
-		if(ret < 0){
-			write_log(tag,EF_LOG_LEVEL_ERROR,"net_thread:%p run stop -4!", this);
-			return	-4;
-		}
 
 		struct epoll_event	*events = new struct epoll_event[m_max_fds];
 

@@ -71,6 +71,7 @@ class	group_db{
 		int	stop();
 
 		int	init(const std::string& conf);
+		int	start_thread();
 		int	uninit();		
 	
 		static	void* net_thread_process(void*);
@@ -79,11 +80,11 @@ class	group_db{
 	private:
 		int	m_port;
 		int	m_workthreadcnt;
-		const char* m_db_host;
+		std::string m_db_host;
 		int	m_db_port;
-		const char* m_user;
-		const char* m_password;
-		const char* m_database;
+		std::string m_user;
+		std::string m_password;
+		std::string m_database;
 		const char* m_logconf;
 		std::string m_conf;
 		g_con_factory* m_con_factory;

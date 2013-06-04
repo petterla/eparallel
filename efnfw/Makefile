@@ -27,13 +27,13 @@ solib = $(ROOT)/lib
 CC = g++ 
 DEFS = -D_DEBUG
 IFLAGS1 = -I$(nfw_inc) -I$(be_inc)
-CFLAGS = -Wall $(IFLAGS1) 
+CFLAGS = -g -Wall $(IFLAGS1) 
 APPLIBS = 
 SYSLIBS = -lpthread
 LFLAGS = -L/usr/lib64 -L/usr/local/lib64 -L/usr/lib -L/usr/local/lib 
 
 ifeq ($(MAKECMDGOALS), so)
-  CFLAGS = -fPIC -DUNIX $(IFLAGS)
+  CFLAGS = -g -fPIC -DUNIX $(IFLAGS)
 endif
 
 ifeq ($(MAKECMDGOALS), debug)

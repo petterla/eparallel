@@ -127,11 +127,7 @@ namespace	group{
 group_db::group_db()
 	:m_port(0),
 	m_workthreadcnt(10),
-	m_db_host(NULL),
 	m_db_port(3306),
-	m_user(NULL),
-	m_password(NULL),
-	m_database(NULL),
 	m_con_factory(NULL),
 	m_accept(NULL),
 	m_net_thread(NULL)
@@ -150,26 +146,34 @@ int   group_db::init(const std::string& conf){
 	config_read_file(&cfg, conf.data());
 	config_lookup_int(&cfg, "listen_port", &m_port);
 	config_lookup_int(&cfg, "thread_count", &m_workthreadcnt);
-	config_lookup_string(&cfg, "db_host", &m_db_host);
-	if(!m_db_host){
+	const char*db_host = "";
+	const char* db_user = "";
+	const char* password = "";
+	const char* database = "";
+	config_lookup_string(&cfg, "db_host", &db_host);
+	if(!db_host){
 		std::cout << "get db_host fail!\n";
 		ret = -1;
 		goto exit;
 	}
+	m_db_host = db_host;
 	config_lookup_int(&cfg, "db_port", &m_db_port);	
-	config_lookup_string(&cfg, "db_user", &m_user);
-	if(!m_user){
+	config_lookup_string(&cfg, "db_user", &db_user);
+	if(!db_user){
 		std::cout << "get db_user fail!\n";
 		ret = -1;
 		goto exit;
 	}
-	config_lookup_string(&cfg, "db_password", &m_password);
-	if(!m_password){
+	m_user = db_user;
+	config_lookup_string(&cfg, "db_password", &password);
+	if(!password){
 		std::cout << "get db_password fail!\n";
 		ret = -1;
 		goto exit;
 	}
-	config_lookup_string(&cfg, "database", &m_database);
+	m_password = password;
+	config_lookup_string(&cfg, "database", &database);
+	m_database = database;
 	config_lookup_string(&cfg, "logconfig", &m_logconf);
 	if(!m_logconf){
 		std::cout << "get logconfig fail!\n";
@@ -186,7 +190,21 @@ int   group_db::init(const std::string& conf){
 	}	
 	m_con_factory = new g_con_factory(this);
 	m_accept->set_con_factory(m_con_factory);
+exit:		
+	config_destroy(&cfg);
+	return	ret;
+}
+
+int	group_db::start_thread(){
+	int	ret = 0;
+
 	m_net_thread = new ef::net_thread(m_accept);	
+	
+	if(m_net_thread->init() < 0){
+		std::cout << "group db init, init net_thread fail!\n";
+		ret = -2;
+		goto exit;
+	}
 
 	if(m_workthreadcnt > GROUP_DB_MAX_THREAD){
 		m_workthreadcnt = GROUP_DB_MAX_THREAD;
@@ -197,15 +215,15 @@ int   group_db::init(const std::string& conf){
 	}
 
 	for(int j = 0; j < m_workthreadcnt; ++j){
-		if(m_work_threads[j]->init(m_db_host, m_db_port, 
-			m_user, m_password, "xylx") < 0){
+		if(m_work_threads[j]->init(m_db_host.data(), m_db_port, 
+			m_user.data(), m_password.data(), "xylx") < 0){
 			ret = -1;
 			break;
 		}
 	}
-exit:		
-	config_destroy(&cfg);
+exit:
 	return	ret;
+
 }
 
 int	group_db::uninit(){
@@ -226,7 +244,7 @@ void* group_db::net_thread_process(void *param){
 	ef::net_thread *thr = (ef::net_thread *)param;
 	assert(thr);
 	thr->run();
-	std::cout << "net_thread_stop!\n" << std::endl;
+	//std::cout << "net_thread_stop!\n" << std::endl;
 	return 0;
 }
 
@@ -248,7 +266,7 @@ int group_db::run(){
 		NULL, net_thread_process,m_net_thread);
 
 	for(int i = 0; i < m_workthreadcnt; ++i){
-		std::cout << "\nstart thread:" << i <<std::endl;
+		//std::cout << "\nstart thread:" << i <<std::endl;
 		be::be_thread_create(&m_work_thread_handles[i],
 			NULL, work_thread_process,m_work_threads[i]);		
 	}
