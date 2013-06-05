@@ -62,7 +62,7 @@ void* get_task_proc(void* p){
         }
         if(q->count() < 10){
             q->dump();
-            sleep(50);
+            elog::sleep_ms(50);
         }
     }
     return 0;

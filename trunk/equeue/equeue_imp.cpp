@@ -22,7 +22,12 @@ int load_op_from_buf(const char* buf,int len, op& o){
     o.m_op_id = *(int64*)buf;
     buf += sizeof(int64);
     len -= sizeof(int64);
-
+    if(len < (int)sizeof(o.m_log_file_id)){
+        return -1;
+    }
+    o.m_log_file_id = *(int*)buf;
+    buf += sizeof(int);
+    len -= sizeof(int);
     if(len < (int)sizeof(o.m_t.m_id)){
         return -1;
     }
@@ -51,13 +56,18 @@ int save_op_to_buf(const op& o, char* buf, int len){
     *(int*)buf = o.m_cmd;
     buf += sizeof(int);
     len -= sizeof(int);  
-
     if(len < (int)sizeof(int64)){
         return -1;
     }
     *(int64*)buf = o.m_op_id;
     buf += sizeof(int64);
     len -= sizeof(int64);  
+    if(len < (int)sizeof(o.m_log_file_id)){
+        return -1;
+    }
+    *(int*)buf = o.m_log_file_id;
+    buf += sizeof(int);
+    len -= sizeof(int);
     if(len < (int)sizeof(o.m_t.m_id)){
         return -1;
     }
@@ -225,8 +235,14 @@ int eq_imp::add_back(const std::string& t){
                                    << ", m_cnt:" << m_cnt;
         return -1;
     }
+
+    ret = check_if_open_new_file();
+    if(ret < 0){
+        return -1;
+    }
     op o;
     o.m_cmd = OP_ADD;
+    o.m_log_file_id = m_current_file_id; 
     o.m_op_id = inc_and_get_op_id();
     o.m_t.m_id = inc_and_get_id();
     o.m_t.m_cont = t; 
@@ -270,10 +286,6 @@ int eq_imp::check_if_open_new_file(){
 
 int eq_imp::save_task_to_file(const op& o){
     int ret = 0;
-    ret = check_if_open_new_file();
-    if(ret < 0){
-        return -1;
-    }
     std::string buf;
     buf.resize(sizeof(o) + o.m_t.m_cont.size());
     ret = save_op_to_buf(o, const_cast<char*>(buf.data()), buf.size());
@@ -412,7 +424,7 @@ int eq_imp::dump(){
         log_id = m_tasks.front().m_log_file_id;
         op_id = m_tasks.front().m_op_id; 
     }
-    os << log_id << "_" << op_id << ".dump";
+    os << m_store_path << "/" << log_id << "_" << op_id << ".dump";
     FILE* df = fopen(os.str().data(), "wb");
     if(!df){
         elog::elog_error("eq_imp") << "dump:"
