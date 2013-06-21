@@ -18,11 +18,10 @@ namespace ep{
 	public:
 
 		typedef	std::list<task*> tlist;
-
 		typedef tlist::iterator titeraotr;
 
 		enum{
-			MAX_PRIORITY_NUM = 32 + 1,
+			MAX_PRIORITY_NUM = 32,
 		};
 
 		task_queue();
@@ -35,26 +34,19 @@ namespace ep{
 
 		s32 del_task(task* op, u32 priority);
 
-		//when stop,can add
-		s32 add_delay_task(task* op);
-
 		task* get_task();
 
 		task* try_get_task();
 
 		u32 size(){
-
 			return	m_size;
-
 		}
 
 		u32 total_task_count(){
-
 			return	m_total_task_cnt;
-
 		}
 
-		s32	stop();
+		s32 stop();
 
 	private:
 
@@ -65,16 +57,12 @@ namespace ep{
 		task* get_task_by_priority(u32 priority);
 
 		tlist m_oplists[MAX_PRIORITY_NUM];
-
 		be::MUTEX m_cs;
-
 		be::SEMAPHORE m_semp;
 
 		u32 m_size;
-
 		//total count from first task
 		u32 m_total_task_cnt;
-
 		bool m_stop;
 
 	};
@@ -91,27 +79,18 @@ namespace ep{
 		}
 
 		virtual s32 recycle(){
-
 			delete this;
-
 			return	0;
-
 		}
 
 		virtual s32 run_process(){
-
 			process();
-
 			recycle();
-
 			return	0;
-
 		}
 
 		virtual	s32	process(){
-
 			return	0;
-
 		}
 
 	};
@@ -126,25 +105,17 @@ namespace ep{
 	public:
 
 		enum{
-
 			DEFAULT_MAX_THREAD_NUM = 128,
-
 			DEFAULT_MIN_THREAD_NUM = 32,
-
 			DEFAULT_TASK_QUE_MAX_SIZE = 4096, 
-
 			DEFAULT_SCHEDULE_SPAN = 50,//ms
 		};
 		
 		//maxthread must >= minthread
 		thread_pool( u32 minthread = DEFAULT_MIN_THREAD_NUM,
-				
 				u32 maxthread = DEFAULT_MAX_THREAD_NUM,
-				
 				u32 schedulespan = DEFAULT_SCHEDULE_SPAN,
-				
 				u32 quemaxsz = DEFAULT_SCHEDULE_SPAN,
-				
 				bool busycontrol = false);
 
 		~thread_pool();
@@ -171,17 +142,15 @@ namespace ep{
 		s32 check_need_more_thread();
 
 		//return the thread num real start
-		s32	start_temp_thread(u32 cnt);
+		s32 start_temp_thread(u32 cnt);
 
 		friend class master_thread;
 
 		bool m_run;
 
 		u32 m_threads_cnt;
-
-		u32	m_tmp_threads_cnt;
-
-		u32	m_tmp_thread_idx;
+		u32 m_tmp_threads_cnt;
+		u32 m_tmp_thread_idx;
 
 		//if the task_q size is increase
 		//we need start more temp thread;
@@ -190,7 +159,6 @@ namespace ep{
 		bool m_too_busy;
 
 		u32 m_schedule_span;
-
 		bool m_busy_control;
 
 		//only m_busy_control == true and
@@ -199,9 +167,7 @@ namespace ep{
 		u32 m_task_que_max_size;
 
 		master_thread* m_master_thread;
-
 		permanent_thread* m_threads;
-
 		temporary_thread* m_tmp_threads;
 
 		task_queue* m_task_q;

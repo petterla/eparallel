@@ -17,23 +17,22 @@ namespace	ep{
 	public:
 
 		parallel(u32 max_child_task_num 
-			
 			= DEFAULT_MAX_CHILD_TASK_NUM);
 
 		~parallel();
 
-		s32		init();
+		s32     init();
 
-		s32		free();		
+		s32     destroy();		
 
-		job*	create_job(u32 priority);
+		job*    create_job(u32 priority);
 
-		s32		run_job(u64 j);
+		s32     run_job(u64 j);
 
 		//when job run,could cancel
-		s32		cancel_job(u64 j);
+		s32     cancel_job(u64 j);
 
-		s32		destroy_job(u64 j);
+		s32     destroy_job(u64 j);
 
 	private:
 

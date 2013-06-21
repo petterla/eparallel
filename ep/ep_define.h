@@ -55,7 +55,7 @@ namespace ep{
 
 		PORIORITY_LOW = 24,
 
-		PORIORITY_LOWEST = 32,
+		PORIORITY_LOWEST = 31,
 
 	};
 
