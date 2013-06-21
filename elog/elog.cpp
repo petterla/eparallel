@@ -549,16 +549,16 @@ int fileappender::take(){
         std::string filename;
         switch(m_schedu_span){
         case MINUTE:
-            filename = m_path + "_" + get_str_minute(n) + get_str_pid() + ".log";
+            filename = m_path + "_" + get_str_minute(n) + ".log";
             t = get_minute_timestamp(n);
             break;
         case HOUR:
-            filename = m_path + "_" + get_str_hour(n) + get_str_pid() + ".log";
+            filename = m_path + "_" + get_str_hour(n) + ".log";
             t = get_hour_timestamp(n);
             break;
         case DAY:
         default:
-            filename = m_path + "_" + get_str_day(n) + get_str_pid() + ".log";
+            filename = m_path + "_" + get_str_day(n) + ".log";
             t = get_day_timestamp(n);
             break;
         }
