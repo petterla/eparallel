@@ -50,36 +50,44 @@ int	main(int argc,char** argv)
 	signal(SIGHUP,  signal_handler); /* catch hangup signal */
 	signal(SIGTERM, signal_handler); /* catch kill signal */
 
-	int child_count = 1;
+	int child_count = 0;
 	
 	if(argc > 2){
 		child_count = atoi(argv[2]);
 	}
 
-	ef::set_log_level(ef::EF_LOG_LEVEL_ERROR);	
+	ef::set_log_level(ef::EF_LOG_LEVEL_ALL);	
 	group::group_db	db;
 	g_pdb	=	&db;
 	if(db.init(argv[1]) < 0){
 		printf("db init:%s fail!\n", argv[1]);
 		return	-1;
 	}
-	
-	for(int i = 0; i < child_count; ++i){
-		pid_t pid = fork();
-		if(pid == 0){
-			db.start_thread();
-			db.run();
-			while(g_run && getppid() != 1){
-				sleep(1);
+	if(child_count > 0){	
+		for(int i = 0; i < child_count; ++i){
+			pid_t pid = fork();
+			if(pid == 0){
+				db.start_thread();
+				db.run();
+				while(g_run && getppid() != 1){
+					sleep(1);
+				}
+				db.stop();
+				db.uninit();
+				printf("groupdb stop\n");
+				return	0;
 			}
-			db.stop();
-			db.uninit();
-			printf("groupdb stop\n");
-			return	0;
 		}
+	}else{
+		db.start_thread();
+		db.run();
+
 	}
 	while(g_run){
 		sleep(1);
+	}
+	if(child_count == 0){
+		db.stop();
 	}
 	db.uninit();
 	printf("groupdb stop\n");

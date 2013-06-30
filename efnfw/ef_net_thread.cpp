@@ -1,10 +1,10 @@
 #include "ef_net_thread.h"
 #include "ef_connection.h"
-#include "ef_acceptor.h"
 #include "ef_operator.h"
 #include "ef_utility.h"
 #include "ef_log.h"
 #include "ef_sock.h"
+#include "be_atomic.h"
 #include <sys/epoll.h>
 #include <errno.h>
 #include <string.h>
@@ -14,22 +14,26 @@
 namespace	ef{
 
 const	char*	net_thread::tag="net_thread";
-	net_thread::net_thread(acceptor *accp, int32 max_fds)
+//	net_thread::net_thread(acceptor *accp, int32 max_fds)
+//		:m_max_fds(max_fds),
+//		m_run(false),
+//		m_epl(INVALID_SOCKET),
+//		m_ctlfd(INVALID_SOCKET),
+//		m_ctlfd1(INVALID_SOCKET),
+//		m_accept(accp),
+//		m_cur_id(1)
+//	{
+//		be::be_mutex_init(&m_opcs);
+//		m_epl = epoll_create(m_max_fds);	
+//	}
+
+	net_thread::net_thread(int32 max_fds)
 		:m_max_fds(max_fds),
 		m_run(false),
 		m_epl(INVALID_SOCKET),
 		m_ctlfd(INVALID_SOCKET),
 		m_ctlfd1(INVALID_SOCKET),
-		m_accept(accp)
-	{
-		be::be_mutex_init(&m_opcs);
-		m_epl = epoll_create(m_max_fds);	
-	}
-
-	net_thread::net_thread(int32 max_fds)
-		:m_max_fds(max_fds),
-		m_run(false),
-		m_accept(NULL)
+		m_cur_id(1)
 	{
 		be::be_mutex_init(&m_opcs);
 		m_epl = epoll_create(m_max_fds);	
@@ -43,9 +47,15 @@ const	char*	net_thread::tag="net_thread";
 		be::be_mutex_destroy(&m_opcs);
 	}
 
-	int32	net_thread::set_acceptor(acceptor *accp){
-		m_accept = accp;
-		return	0;
+//	int32	net_thread::set_acceptor(acceptor *accp){
+//		m_accept = accp;
+//		return	0;
+//	}
+
+	uint32	net_thread::get_id(){
+		be::atomic_increment32((volatile be::s32*)&m_cur_id);
+		be::atomic_compare_exchange32((volatile be::s32*)&m_cur_id, 0, 1);
+		return	m_cur_id;
 	}
 
 	int32	net_thread::start_ctl(){
@@ -132,33 +142,34 @@ const	char*	net_thread::tag="net_thread";
 		return	0;
 	}
 
-	int32	net_thread::start_listen(){
-		struct epoll_event	ev;
-		ev.events = EPOLLIN;
-		ev.data.ptr = m_accept;
-		return	epoll_ctl(m_epl, EPOLL_CTL_ADD, m_accept->get_fd(), &ev);
-	}
+//	int32	net_thread::start_listen(){
+//		struct epoll_event	ev;
+//		ev.events = EPOLLIN;
+//		ev.data.ptr = m_accept;
+//		return	epoll_ctl(m_epl, EPOLL_CTL_ADD, m_accept->get_fd(), &ev);
+//	}
 
-	int32	net_thread::stop_listen(){
-		struct epoll_event	ev;
-		ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-		ev.data.ptr = m_accept;
-		return	epoll_ctl(m_epl, EPOLL_CTL_DEL, m_accept->get_fd(), &ev);
-	}
+//	int32	net_thread::stop_listen(){
+//		struct epoll_event	ev;
+//		ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+//		ev.data.ptr = m_accept;
+//		return	epoll_ctl(m_epl, EPOLL_CTL_DEL, m_accept->get_fd(), &ev);
+//	}
 
 	int32	net_thread::stop(){
 		write_log(tag,EF_LOG_LEVEL_ERROR,"net_thread:%p stop!", this);
-		stop_listen();
+		//stop_listen();
 		m_run = false;
 		return	0;
 	}
 
 	int32	net_thread::init(){
-		int32 ret = start_listen();
-		if(ret < 0){
-			write_log(tag,EF_LOG_LEVEL_ERROR,"net_thread:%p init fail -3!", this);
-			return	-3;
-		}
+		int32 ret = 0; 
+//		ret = start_listen();
+//		if(ret < 0){
+//			write_log(tag,EF_LOG_LEVEL_ERROR,"net_thread:%p init fail -3!", this);
+//			return	-3;
+//		}
 
 		ret = start_ctl();
 		if(ret < 0){
@@ -210,10 +221,10 @@ const	char*	net_thread::tag="net_thread";
 				continue;
 			}
 			for(int i = 0; i < nfds; ++i){
-				if(events[i].data.ptr == m_accept){
-					m_accept->accept_connect(this);
-					continue;
-				}
+				//if(events[i].data.ptr == m_accept){
+				//	m_accept->accept_connect(this);
+				//	continue;
+				//}
 				if(events[i].data.fd == m_ctlfd){
 					process_op();
 					continue;
@@ -308,6 +319,7 @@ const	char*	net_thread::tag="net_thread";
 		int	i = 0;
 		diff.m_sec = 0;
 		diff.m_usec = 0;
+		be::be_mutex_take(&m_opcs);
 		while(itor != m_timer_map.end() && i < max_timer_one_loop){
 			time_tv tv1 = (*itor).first.tv;
 			if(tv_cmp(tv, tv1) >= 0){
@@ -320,11 +332,18 @@ const	char*	net_thread::tag="net_thread";
 				break;
 			}
 		}
+		be::be_mutex_give(&m_opcs);
 
 		for(int j = 0; j < i; ++j){
 			timeouts[j].tm.timeout();
-			m_timer_map.erase(timeouts[j].key);
 		}
+	
+		be::be_mutex_take(&m_opcs);	
+		for(int k = 0; k < i; ++k){
+			m_timer_map.erase(timeouts[k].key);
+		}
+		be::be_mutex_give(&m_opcs);
+
 		return	ret;
 	}
 
@@ -391,17 +410,23 @@ const	char*	net_thread::tag="net_thread";
 		connection	*con = tm.get_con();
 		struct in_addr	addr;
 		int32	port;
-
-		con->get_addr(addr,port);	
+		
 		key.tv = tm.get_time_out_time();
-		key.con_id = con->get_id();
+		if(con){
+			con->get_addr(addr,port);	
+			key.con_id = con->get_id();
+		}else{
+			key.con_id = 0;
+		}
 		key.id = tm.get_id();
+		be::be_mutex_take(&m_opcs);		
 		m_timer_map[key] = tm;
+		be::be_mutex_give(&m_opcs);
 
 		write_log(tag,EF_LOG_LEVEL_NOTIFY,"con:%p, id:%u, fd:%d,"
 			" %s:%d add timer:%d!",
-			con, con->get_id(), con->get_fd(), 
-			inet_ntoa(addr), port, tm.get_id());	
+			con, con ? con->get_id() : 0, con ? con->get_fd() : -1, 
+			con ? inet_ntoa(addr) : "0", con ? port : 0, tm.get_id());	
 
 		return	0;
 	}
@@ -416,7 +441,10 @@ const	char*	net_thread::tag="net_thread";
 		key.con_id = con->get_id();
 		key.id = tm.get_id();
 		key.tv = tm.get_time_out_time();
+
+		be::be_mutex_take(&m_opcs);		
 		m_timer_map.erase(key);
+		be::be_mutex_give(&m_opcs);
 
 		write_log(tag,EF_LOG_LEVEL_NOTIFY,"con:%p, id:%u, fd:%d,"
 			" %s:%d del timer:%d!",
@@ -466,6 +494,52 @@ const	char*	net_thread::tag="net_thread";
 			}
 		}
 		return	0;
+	}
+
+	int32	net_thread::find_del_timer(int32 id, timer& tm){
+		be::be_mutex_take(&m_opcs);
+		thread_timer_map::iterator itor = m_timers.find(id);
+		if(itor != m_timers.end()){
+			tm = itor->second;
+			m_timers.erase(itor);
+			be::be_mutex_give(&m_opcs);
+			return  0;
+		}
+		be::be_mutex_give(&m_opcs);
+		return  -1;
+
+	}
+
+	int32	net_thread::start_timer(int32 id, 
+			int32 timeout, 
+			timer_handler* handler){
+		int32   ret = 0; 
+		timer   tm; 
+		ret = find_del_timer(id, tm); 
+		if(ret == 0){ 
+			del_timer(tm); 
+		} 
+			
+		timeval tv;
+		gettimeofday(&tv, NULL);
+		tv.tv_sec += timeout / 1000;
+		tv.tv_usec += timeout % 1000 * 1000;
+		timer   tm1(NULL, id, tv, handler);
+
+		be::be_mutex_take(&m_opcs);
+		m_timers[id] = tm1;
+		be::be_mutex_give(&m_opcs);
+		return	add_timer(tm1);
+	}
+
+	int32	net_thread::stop_timer(int32 id){
+		int32   ret = 0;
+		timer   tm;
+		ret = find_del_timer(id, tm);
+		if(ret == 0){
+			del_timer(tm);
+		}
+		return  0;
 	}
 
 }
