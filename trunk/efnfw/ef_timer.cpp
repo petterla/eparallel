@@ -3,8 +3,14 @@
 
 namespace	ef{
 
-	timer::timer(connection *con, int32 id,time_tv timeouttime)
-		:m_con(con), m_id(id), m_timeouttime(timeouttime)
+	timer::timer(connection *con, 
+		int32 id,
+		time_tv timeouttime, 
+		timer_handler *handler)
+		:m_con(con), 
+		m_handler(handler),
+		m_id(id), 
+		m_timeouttime(timeouttime)
 	{
 
 	}
@@ -14,7 +20,10 @@ namespace	ef{
 	}
 
 	int32	timer::timeout(){
-		return	m_con->handle_timer(m_id);
+		if(m_con){
+			return	m_con->handle_timer(m_id);
+		}
+		return	m_handler->handle_timer(m_id);
 	}
 
 	int32	tv_cmp(time_tv t1, time_tv t2){

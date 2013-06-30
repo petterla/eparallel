@@ -182,7 +182,7 @@ int   group_db::init(const std::string& conf){
 	}
 	m_conf = conf;
 	elog::elog_init(m_logconf);	
-	m_accept = new ef::acceptor("0.0.0.0", m_port);
+	m_accept = new ef::acceptor();
 	if(!m_accept){
 		std::cout << "group db init, create accept fail!\n";
 		ret = -1;
@@ -198,13 +198,17 @@ exit:
 int	group_db::start_thread(){
 	int	ret = 0;
 
-	m_net_thread = new ef::net_thread(m_accept);	
+	m_net_thread = new ef::net_thread();	
 	
 	if(m_net_thread->init() < 0){
 		std::cout << "group db init, init net_thread fail!\n";
 		ret = -2;
 		goto exit;
 	}
+	
+	//m_accept->set_thread(m_net_thread);
+	m_accept->start_listen("0.0.0.0", m_port, m_net_thread);
+	std::cout << "start listen, port:" << m_port << "\n";
 
 	if(m_workthreadcnt > GROUP_DB_MAX_THREAD){
 		m_workthreadcnt = GROUP_DB_MAX_THREAD;
