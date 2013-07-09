@@ -97,7 +97,8 @@ const	char*	net_thread::tag="net_thread";
 		assert(con);
 		struct in_addr	addr;
 		int32	port;
-		con->get_addr(addr,port);	
+		con->get_addr(addr,port);
+		be::be_mutex_take(&m_opcs);	
 		if(m_con_map.find(con->get_id()) == m_con_map.end()){
 			m_con_map.insert(con_map::value_type(con->get_id(), con));
 			write_log(tag,EF_LOG_LEVEL_NOTIFY,"con:%p, id:%u, fd:%d, %s:%d add sucess!",
@@ -106,6 +107,7 @@ const	char*	net_thread::tag="net_thread";
 			write_log(tag,EF_LOG_LEVEL_ERROR,"con:%p, id:%u, fd:%d, %s:%d has be added!",
 				con, con->get_id(), con->get_fd(), inet_ntoa(addr),port);
 		}
+		be::be_mutex_give(&m_opcs);
 		return	0;
 	}
 
@@ -113,7 +115,8 @@ const	char*	net_thread::tag="net_thread";
 		assert(con);	
 		struct in_addr	addr;
 		int32	port;	
-		con->get_addr(addr,port);	
+		con->get_addr(addr,port);
+		be::be_mutex_take(&m_opcs);	
 		con_map::iterator itor = m_con_map.find(con->get_id());
 		if(itor != m_con_map.end()){
 			m_con_map.erase(itor);
@@ -123,6 +126,7 @@ const	char*	net_thread::tag="net_thread";
 			write_log(tag,EF_LOG_LEVEL_ERROR,"con:%p, id:%u, fd:%d, %s:%d del not find!",
 				con, con->get_id(), con->get_fd(), inet_ntoa(addr),port);	
 		}
+		be::be_mutex_give(&m_opcs);
 		return	0;
 	}
 

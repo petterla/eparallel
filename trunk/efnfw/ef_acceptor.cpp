@@ -1,6 +1,7 @@
 #include "ef_acceptor.h"
 #include "ef_con_factory.h"
 #include "ef_net_thread.h"
+#include "ef_id_pool.h"
 #include "ef_sock.h"
 #include "ef_log.h"
 #include <string.h>
@@ -71,7 +72,7 @@ namespace	ef{
 		}
 		set_fd(fd);
 		set_thread(ntr);
-		set_id(ntr->get_id());
+		set_id(get_inc_id());
 		return	set_notify(ADD_READ);
 	}
 

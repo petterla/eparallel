@@ -63,6 +63,10 @@ class	connection{
 			m_fd = fd;
 		}
 
+		uint32	send_queue_size(){
+			return	m_send_queue_size;
+		}
+
 		SOCKET	get_fd() const{
 			return	m_fd;
 		}
@@ -113,8 +117,9 @@ class	connection{
 		loop_buf	m_buf;
 		std::list<timer>	m_timers;
 		std::list<std::string>	m_msgs;
+		uint32	m_send_queue_size;
 		uint32	m_cur_msg_start;
-		int32		m_flag;
+		int32	m_flag;
 };
 
 
