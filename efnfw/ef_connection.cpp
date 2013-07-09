@@ -196,6 +196,7 @@ int32	connection::handle_timer(int32 id){
 
 int32	connection::send_message(const std::string &msg){
 	int32	ret = 0;
+	m_send_queue_size += (uint32)msg.size();
 	m_msgs.push_back(msg);
 	ret = do_send();
 	return	ret;
@@ -241,7 +242,7 @@ int32	connection::do_send(){
 		if(ret < 0){
 			return	ret;
 		}
-		
+		m_send_queue_size -= (uint32)ret;	
 		if((uint32)ret == len){
 			m_cur_msg_start = 0;
 			m_msgs.pop_front();

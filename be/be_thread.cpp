@@ -104,7 +104,7 @@ int	be_sem_init	(SEMAPHORE* sem, int initcnt, int maxcnt)
 #endif
 	return	ret;
 }
-int	be_sem_take (SEMAPHORE* sem)
+int	be_sem_take (SEMAPHORE* sem, bool couldbreak)
 {
 	int		ret	=	0;
 #ifdef	_WIN32
@@ -114,7 +114,7 @@ int	be_sem_take (SEMAPHORE* sem)
 #else
 loop:
 	ret	=	sem_wait(sem);
-	if(ret < 0 && errno == EINTR){
+	if(ret < 0 && errno == EINTR && !couldbreak){
 		goto loop;
 	}
 #endif
