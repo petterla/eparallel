@@ -11,7 +11,7 @@ namespace consrv{
 using namespace ef;
 class connection_server;
 
-class server_connection:public ef::connection{
+class server_connection:public connection{
 public:
 	server_connection(connection_server* srv)
 		:m_server_type(0), m_srv(srv){
