@@ -291,8 +291,11 @@ int group_db::stop(){
 	return	0;
 }
 
-connection*	g_con_factory::create_connection(){
-	return	new	g_connection(m_gdb);
+connection*	g_con_factory::create_connection(ef::int32 fd, ef::net_thread* ntr){
+	connection* cli = new	g_connection(m_gdb);
+	cli->set_fd(fd);
+	cli->set_thread(ntr);
+	return	cli;
 }
 
 };

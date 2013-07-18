@@ -12,16 +12,14 @@ class	net_thread;
 class	message{
 	public:
 		message();
-
 		message(net_thread *thr, uint32 conid, std::string msg);
-
 		~message();
 
 		int32	process();
 
 		bool	is_null() const;
 
-		uint32	con_id() const{
+		uint64	con_id() const{
 			return	m_conid;
 		}
 

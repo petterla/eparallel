@@ -45,7 +45,7 @@ class	g_con_factory:public ef::con_factory{
 
 		~g_con_factory(){
 		}
-		virtual	connection*	create_connection();
+		virtual	connection*	create_connection(ef::int32, ef::net_thread*);
 	private:
 		group_db	*m_gdb;
 };

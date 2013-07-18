@@ -1,10 +1,11 @@
 #include "server.h"
+#include "settings.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <vector.h>
+#include <vector>
 
-consrv::connetion_server *g_pdb = NULL;
+consrv::connection_server *g_pdb = NULL;
 int	g_run = 1;
 
 int system_shutdown( void )
@@ -50,13 +51,12 @@ int	main(int argc,char** argv)
 	signal(SIGHUP,  signal_handler); /* catch hangup signal */
 	signal(SIGTERM, signal_handler); /* catch kill signal */
 
-	int child_count = 0;
-	
-	if(argc > 2){
-		child_count = atoi(argv[2]);
-	}
+	if(consrv::init_settings(argv[1] < 0)){
+		printf("read config:%s fail!", argv[1]);
+		return	-1;
+	}	
 
-	consrv::connetion_server db;
+	consrv::connection_server db;
 	g_pdb	=	&db;
 	if(db.init(argv[1]) < 0){
 		printf("connetion_server init:%s fail!\n", argv[1]);
