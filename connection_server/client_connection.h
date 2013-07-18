@@ -13,7 +13,7 @@ using namespace ef;
 
 class connection_server;
 
-class client_connection:public ef::connection{
+class client_connection:public connection{
 public:
 	enum{
 	    CHECK_TIMER    = 1,
@@ -28,8 +28,11 @@ public:
 
 protected:
 private:
-	int32        m_msglen;
-	int32        m_rcvlen;
+	int32    handle_command(const std::string& cmd);
+	int32    handle_client_req(const std::string& cmd);
+	int32    handle_keep_alive(const std::string& cmd);
+	int32    m_msglen;
+	int32    m_rcvlen;
 	std::string    m_buf;
 	connection_server    *m_db;
 	time_t        m_last_time;

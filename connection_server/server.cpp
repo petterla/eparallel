@@ -19,16 +19,16 @@ connection_server::connection_server()
 {
 }
 
-ef::connection* c_con_factory::create_connection(int32 fd, ef::net_thread* ntr){
+connection* c_con_factory::create_connection(int32 fd, net_thread* ntr){
 	client_connection* cli = new client_connection(m_gdb);	
-	ef::net_thread* t = m_gdb->get_net_thread(m_idx++ % m_gdb->net_thread_count());
+	net_thread* t = m_gdb->get_net_thread(m_idx++ % m_gdb->net_thread_count());
 	cli->set_fd(fd);
 	cli->set_thread(t);
 	return	cli;
 }
-ef::connection* s_con_factory::create_connection(int32 fd, ef::net_thread* ntr){
+connection* s_con_factory::create_connection(int32 fd, net_thread* ntr){
 	server_connection* cli = new server_connection(m_gdb);	
-	ef::net_thread* t = m_gdb->get_net_thread(m_idx++ % m_gdb->net_thread_count());
+	net_thread* t = m_gdb->get_net_thread(m_idx++ % m_gdb->net_thread_count());
 	cli->set_fd(fd);
 	cli->set_thread(t);
 	return	cli;
@@ -38,14 +38,14 @@ connection_server::~connection_server(){
 
 int   connection_server::init(const std::string& conf){
 	int ret = 0;
-	m_client_accept = new ef::acceptor();
+	m_client_accept = new acceptor();
 	if(!m_client_accept){
 		std::cout << "consrv db init, create client accept fail!\n";
 		ret = -1;
 		goto exit;
 	}	
 	m_client_accept->set_con_factory(&m_c_fact);
-	m_server_accept = new ef::acceptor();
+	m_server_accept = new acceptor();
 	if(!m_server_accept){
 		std::cout << "consrv db init, create server accept fail!\n";
 		ret = -1;
@@ -57,7 +57,7 @@ int   connection_server::init(const std::string& conf){
 	if(m_netthreadcnt > GROUP_DB_MAX_THREAD)
 		m_netthreadcnt = GROUP_DB_MAX_THREAD;
 	for(int i = 0; i < m_netthreadcnt; ++i){
-		m_net_threads[i] = new ef::net_thread();
+		m_net_threads[i] = new net_thread();
 	}
 	
 	m_client_port = get_settings().client_listen_port;
@@ -102,7 +102,7 @@ int	connection_server::uninit(){
 
 void* connection_server::net_thread_process(void *param){
 	
-	ef::net_thread *thr = (ef::net_thread *)param;
+	net_thread *thr = (net_thread *)param;
 	assert(thr);
 	thr->run();
 	//std::cout << "net_thread_stop!\n" << std::endl;

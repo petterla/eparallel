@@ -66,8 +66,9 @@ namespace consrv{
 			std::string cont;
 			cont.resize(len);
 			read_buf((char*)cont.data(), len);
-			//ef::message	msg(get_thread(), get_id(), m_buf + cont);
+			//message	msg(get_thread(), get_id(), m_buf + cont);
 			//ret = m_db->get_msg_queue()->push_msg(msg);
+			ret = handle_command(cont);
 			set_notify_pack(0);
 			elog::elog_info(tag) << "con:" << get_id()
 				<< ",ip:" << inet_ntoa(addr) << ",port:" 
@@ -105,6 +106,10 @@ namespace consrv{
 	}
 	
 
+	int32	client_connection::handle_command(const std::string& cmd){
+		int32  ret = 0;
+		return	ret;
+	}
 
 	int32   client_manager::add_client(client_connection* c, uint64 sessid){
 		int32  ret = 0;
@@ -140,7 +145,7 @@ namespace consrv{
 		be::be_mutex_take(&(m_groups[idx].m_cs));
 		group_t::iterator itor = m_groups[idx].m_group.find(sessid);
 		if(itor != m_groups[idx].m_group.end()){
-			ef::net_thread* nthr = (itor->second)->get_thread();
+			net_thread* nthr = (itor->second)->get_thread();
 			ret = nthr->send_message(itor->second->get_id(), msg);			
 		}else{
 			ret = -1;
