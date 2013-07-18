@@ -18,6 +18,7 @@ namespace	ef{
 
 	struct	timeval	tv_diff(struct timeval t1, struct timeval t2);
 
+	int64	htonll(int64 l);
 };
 
 #endif/*EF_UTILITY_H*/

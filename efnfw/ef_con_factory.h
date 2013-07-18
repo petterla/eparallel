@@ -6,19 +6,15 @@
 namespace	ef{
 
 	class	connection;
+	class	net_thread;
 
 	class	con_factory{
-
 	public:
 		virtual	~con_factory(){
 
 		}
 
-		virtual	connection*	create_connection(){
-
-			return	NULL;
-
-		}
+		virtual	connection* create_connection(int32 fd, net_thread* ntr) = 0;
 
 	};
 

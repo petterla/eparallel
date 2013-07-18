@@ -7,6 +7,17 @@
 
 namespace	ef{
 
+	int64	htonll(int64 ll){
+		int64 ret = ll;
+		char* p = (char*)&ret;
+		for(int i = 0; i < 4; ++i){
+			char c = p[i];
+			p[i] =  p[7 - i];
+			p[7 - i] = c;
+		}
+		return	ret;
+	}
+
 	int32	tv_cmp(struct timeval t1, struct timeval t2){
 		if(t1.tv_sec < t2.tv_sec){
 			return	-1;

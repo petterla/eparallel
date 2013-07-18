@@ -42,22 +42,17 @@ namespace	ef{
 				return	NULL;
 			}
 			set_socket_nonblocking(client);
-			con = m_confac->create_connection();
+			con = m_confac->create_connection(client, thr);
 			if(!con){
 				write_log(tag,EF_LOG_LEVEL_ERROR,"get connection"
 					" fail!");	
 				return	NULL;
 			}
-
-			con->set_fd(client);
-			con->set_id(thr->get_id());
 			con->set_addr(addr.sin_addr,htons(addr.sin_port));
 			write_log(tag,EF_LOG_LEVEL_NOTIFY,"new connection:%p,"
 				" id:%u, fd:%d, from %s:%d!",
 				con, con->get_id(), con->get_fd(),
 				inet_ntoa(addr.sin_addr), htons(addr.sin_port));
-			thr->add_connection(con);
-			con->set_thread(thr);	
 			con->on_create();
 		}
 
