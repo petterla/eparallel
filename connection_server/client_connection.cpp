@@ -29,7 +29,6 @@ namespace consrv{
 	int32	client_connection::on_create(){
 		set_notify(ADD_READ);
 		start_timer(CHECK_TIMER, 5000);
-		get_client_manager().add_client(this, m_sessid);
 		return	0;
 
 	}
@@ -40,8 +39,6 @@ namespace consrv{
 		struct in_addr addr;
 		int32 port;
 		int32 len = 0;
-		//char buf[4096] = {0};
-		//char* body = NULL;
 
 		get_addr(addr, port);
 		m_last_time = time(NULL);		
@@ -66,8 +63,6 @@ namespace consrv{
 			std::string cont;
 			cont.resize(len);
 			read_buf((char*)cont.data(), len);
-			//message	msg(get_thread(), get_id(), m_buf + cont);
-			//ret = m_db->get_msg_queue()->push_msg(msg);
 			ret = handle_command(cont);
 			set_notify_pack(0);
 			elog::elog_info(tag) << "con:" << get_id()
@@ -104,10 +99,63 @@ namespace consrv{
 
 		return	0;
 	}
-	
+
+	int32	client_connection::handle_login(const std::string& cmd){
+		int32  ret = 0;
+		ret = get_client_manager().add_client(this, m_sessid);
+		head h = *(head*)cmd.data();
+		h.cmd = htonl(CLIENT_LOGIN_RSP);
+		c_login_rsp rsp = {0};
+		h.len = htonl(sizeof(h) + sizeof(rsp));
+		if(ret < 0){
+			rsp.status = htonl(CREATE_SESSION_FAIL);
+		}
+		std::string buf;
+		buf.append((char*)&h, sizeof(h));
+		buf.append((char*)&rsp, sizeof(rsp));
+		return	send_message(buf);	
+	}
+
+	int32	client_connection::handle_keep_alive(const std::string& cmd){
+		return	0;
+	}
+
+	int32	client_connection::handle_client_req(const std::string& cmd){
+		int32  ret = 0;
+		c_req req = *(c_req*)(cmd.data() + sizeof(head));
+		req.server = htonl(req.server);
+		ret = get_server_manager().send_to_server(req.server, cmd);	
+		if(ret < 0){
+			//send resp
+			head h = *(head*)cmd.data();
+			h.cmd = htonl(CLIENT_REQ_RSP);
+			c_rsp rsp = {0};
+			h.len = htonl(sizeof(h) + sizeof(rsp));
+			rsp.sessid = req.sessid;
+			rsp.status = htonl(SEND_TO_SERVER_FAIL);
+			std::string buf;
+			buf.append((char*)&h, sizeof(h));
+			buf.append((char*)&rsp, sizeof(rsp));
+			ret = send_message(buf);
+		}
+		return	ret;	
+	}	
 
 	int32	client_connection::handle_command(const std::string& cmd){
 		int32  ret = 0;
+		head h = *(head*)cmd.data();
+		h.cmd = htonl(h.cmd);
+		switch(h.cmd){
+		case CLIENT_LOGIN_REQ:
+			ret = handle_login(cmd);
+			break;
+		case CLIENT_REQ_REQ:
+			ret = handle_client_req(cmd);
+			break;
+		case KEEP_ALIVE_REQ:
+			ret = handle_keep_alive(cmd);
+			break;
+		}
 		return	ret;
 	}
 

@@ -16,6 +16,10 @@ using namespace ef;
 #define	KEEP_ALIVE_REQ		(1000001)
 #define KEEP_ALIVE_RSP		(1000002)
 
+#define SUCCESS			(0)
+#define	CREATE_SESSION_FAIL	(1001)
+#define SEND_TO_SERVER_FAIL	(1002)
+
 struct head{
 	uint32	magic;//allaways 0x123456
 	uint32	len;//all len, include head

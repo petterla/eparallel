@@ -29,6 +29,7 @@ public:
 protected:
 private:
 	int32    handle_command(const std::string& cmd);
+	int32    handle_login(const std::string& cmd);
 	int32    handle_client_req(const std::string& cmd);
 	int32    handle_keep_alive(const std::string& cmd);
 	int32    m_msglen;
