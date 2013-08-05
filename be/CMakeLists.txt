@@ -1,0 +1,8 @@
+project(elog)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+add_definitions("-Wall -g")
+set(LIBRARY_OUTPUT_PATH lib)
+link_libraries(pthread)
+AUX_SOURCE_DIRECTORY(. SRC_LIST)
+add_library(be STATIC ${SRC_LIST})
+SET_TARGET_PROPERTIES(be PROPERTIES LINKER_LANGUAGE C)
