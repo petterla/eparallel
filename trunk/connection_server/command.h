@@ -20,6 +20,9 @@ using namespace ef;
 #define	CREATE_SESSION_FAIL	(1001)
 #define SEND_TO_SERVER_FAIL	(1002)
 
+#pragma pack(push)
+#pragma pack(1)
+
 struct head{
 	uint32	magic;//allaways 0x123456
 	uint32	len;//all len, include head
@@ -77,6 +80,7 @@ struct to_s_rsp{
         uint8   body[1];
 };
 
+#pragma pack(pop)
 
 }
 
