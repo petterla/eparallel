@@ -1,0 +1,11 @@
+#include "ef_id_pool.h"
+#include "ef_atomic.h"
+
+namespace ef{
+	uint32	get_inc_id(){
+		static volatile int32 id = 0;
+		atomic_increment32((volatile int32*)&id);
+		atomic_compare_exchange32((volatile int32*)&id, 0, 1);
+		return	id;	
+	}
+}
